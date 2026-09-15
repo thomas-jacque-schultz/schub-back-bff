@@ -58,4 +58,9 @@ public interface BotFeignClient {
     @DeleteMapping("/port-forwarding/static-rules/{id}")
     void deleteStaticPortRule(@RequestHeader(value = "Authorization", required = false) String authorization,
                               @PathVariable("id") String id);
+
+    // --- catalogue Portainer ---
+
+    @GetMapping("/portainer/stacks")
+    byte[] getPortainerStacks(@RequestHeader(value = "Authorization", required = false) String authorization);
 }

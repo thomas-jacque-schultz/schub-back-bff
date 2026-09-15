@@ -176,6 +176,18 @@ public class BotGatewayService {
         }
     }
 
+    // --- catalogue Portainer ---
+
+    public ResponseEntity<byte[]> getPortainerStacks(@Nullable String authorization) {
+        try {
+            return ResponseEntity.ok(botFeignClient.getPortainerStacks(authorization));
+        } catch (FeignException ex) {
+            return toFeignError(ex);
+        } catch (Exception ex) {
+            return botUnreachable(ex);
+        }
+    }
+
     private ResponseEntity<byte[]> toFeignError(FeignException ex) {
         HttpStatus status = HttpStatus.resolve(ex.status());
         HttpStatus safeStatus = status != null ? status : HttpStatus.BAD_GATEWAY;

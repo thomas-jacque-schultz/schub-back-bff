@@ -92,4 +92,11 @@ public class BotProxyController {
                                                        @PathVariable String id) {
         return botGatewayService.deleteStaticPortRule(authorization, id);
     }
+
+    // --- catalogue Portainer ---
+
+    @GetMapping("/portainer/stacks")
+    public ResponseEntity<byte[]> getPortainerStacks(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        return botGatewayService.getPortainerStacks(authorization);
+    }
 }
