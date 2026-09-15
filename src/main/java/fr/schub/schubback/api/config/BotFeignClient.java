@@ -1,6 +1,7 @@
 package fr.schub.schubback.api.config;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,4 +42,20 @@ public interface BotFeignClient {
 
     @GetMapping("/discord/guilds/channels")
     byte[] getGuildsChannels(@RequestHeader(value = "Authorization", required = false) String authorization);
+
+    // --- redirections de ports ---
+
+    @GetMapping("/port-forwarding/rules")
+    byte[] getPortForwardingRules(@RequestHeader(value = "Authorization", required = false) String authorization);
+
+    @GetMapping("/port-forwarding/static-rules")
+    byte[] getStaticPortRules(@RequestHeader(value = "Authorization", required = false) String authorization);
+
+    @PostMapping("/port-forwarding/static-rules")
+    byte[] createStaticPortRule(@RequestHeader(value = "Authorization", required = false) String authorization,
+                                @RequestBody Object body);
+
+    @DeleteMapping("/port-forwarding/static-rules/{id}")
+    void deleteStaticPortRule(@RequestHeader(value = "Authorization", required = false) String authorization,
+                              @PathVariable("id") String id);
 }
