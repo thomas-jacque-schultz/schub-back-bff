@@ -52,7 +52,7 @@ jobs:
           fi
 
           echo "username=$DOCKER_USERNAME_CLEAN" >> "$GITHUB_OUTPUT"
-          echo "repository=$DOCKER_USERNAME_CLEAN/schub-back" >> "$GITHUB_OUTPUT"
+          echo "repository=$DOCKER_USERNAME_CLEAN/schub-bff" >> "$GITHUB_OUTPUT"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
