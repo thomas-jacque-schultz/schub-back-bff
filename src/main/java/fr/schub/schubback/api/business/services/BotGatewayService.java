@@ -130,6 +130,52 @@ public class BotGatewayService {
     }
 
     @SuppressWarnings("null")
+    // --- redirections de ports ---
+
+    public ResponseEntity<byte[]> getPortForwardingRules(@Nullable String authorization) {
+        try {
+            return ResponseEntity.ok(botFeignClient.getPortForwardingRules(authorization));
+        } catch (FeignException ex) {
+            return toFeignError(ex);
+        } catch (Exception ex) {
+            return botUnreachable(ex);
+        }
+    }
+
+    public ResponseEntity<byte[]> getStaticPortRules(@Nullable String authorization) {
+        try {
+            return ResponseEntity.ok(botFeignClient.getStaticPortRules(authorization));
+        } catch (FeignException ex) {
+            return toFeignError(ex);
+        } catch (Exception ex) {
+            return botUnreachable(ex);
+        }
+    }
+
+    public ResponseEntity<byte[]> createStaticPortRule(@Nullable String authorization, Object body) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(botFeignClient.createStaticPortRule(authorization, body));
+        } catch (FeignException ex) {
+            // Le refus du connecteur porte le motif utile (port interdit, doublon) : on le
+            // relaie tel quel, sinon l'interface ne peut afficher qu'un échec anonyme.
+            return toFeignError(ex);
+        } catch (Exception ex) {
+            return botUnreachable(ex);
+        }
+    }
+
+    public ResponseEntity<byte[]> deleteStaticPortRule(@Nullable String authorization, String id) {
+        try {
+            botFeignClient.deleteStaticPortRule(authorization, id);
+            return ResponseEntity.noContent().build();
+        } catch (FeignException ex) {
+            return toFeignError(ex);
+        } catch (Exception ex) {
+            return botUnreachable(ex);
+        }
+    }
+
     private ResponseEntity<byte[]> toFeignError(FeignException ex) {
         HttpStatus status = HttpStatus.resolve(ex.status());
         HttpStatus safeStatus = status != null ? status : HttpStatus.BAD_GATEWAY;

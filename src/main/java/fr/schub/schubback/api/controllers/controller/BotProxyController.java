@@ -2,6 +2,7 @@ package fr.schub.schubback.api.controllers.controller;
 
 import fr.schub.schubback.api.business.services.BotGatewayService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,5 +67,29 @@ public class BotProxyController {
     @GetMapping("/discord/guilds/channels")
     public ResponseEntity<byte[]> getGuildsChannels(@RequestHeader(value = "Authorization", required = false) String authorization) {
         return botGatewayService.getGuildsChannels(authorization);
+    }
+
+    // --- redirections de ports ---
+
+    @GetMapping("/port-forwarding/rules")
+    public ResponseEntity<byte[]> getPortForwardingRules(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        return botGatewayService.getPortForwardingRules(authorization);
+    }
+
+    @GetMapping("/port-forwarding/static-rules")
+    public ResponseEntity<byte[]> getStaticPortRules(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        return botGatewayService.getStaticPortRules(authorization);
+    }
+
+    @PostMapping("/port-forwarding/static-rules")
+    public ResponseEntity<byte[]> createStaticPortRule(@RequestHeader(value = "Authorization", required = false) String authorization,
+                                                       @RequestBody(required = false) byte[] body) {
+        return botGatewayService.createStaticPortRule(authorization, body);
+    }
+
+    @DeleteMapping("/port-forwarding/static-rules/{id}")
+    public ResponseEntity<byte[]> deleteStaticPortRule(@RequestHeader(value = "Authorization", required = false) String authorization,
+                                                       @PathVariable String id) {
+        return botGatewayService.deleteStaticPortRule(authorization, id);
     }
 }
