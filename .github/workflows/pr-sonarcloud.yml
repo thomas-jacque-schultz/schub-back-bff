@@ -26,4 +26,10 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven and analyze with SonarCloud
-        run: mvn clean verify sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=thomas-jacque-schultz_Back -Dsonar.organization=thomas-jacque-schultz -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          mvn clean verify sonar:sonar
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.projectKey=thomas-jacque-schultz_Back
+          -Dsonar.organization=thomas-jacque-schultz
