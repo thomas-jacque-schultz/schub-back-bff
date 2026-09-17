@@ -112,6 +112,17 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!--
+              Sans cette déclaration, Maven ne sait pas résoudre le préfixe `sonar:` :
+              il ne le cherche que dans les groupes de plugins par défaut, auxquels
+              org.sonarsource.scanner.maven n'appartient pas. Le workflow échouait sur
+              « No plugin found for prefix 'sonar' ». Même version que les autres repos.
+            -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>4.0.0.4121</version>
+            </plugin>
         </plugins>
     </build>
 
