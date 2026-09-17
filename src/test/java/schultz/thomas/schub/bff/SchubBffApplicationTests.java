@@ -1,10 +1,10 @@
-package fr.schub.schubback;
+package schultz.thomas.schub.bff;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SchubBackApplicationTests {
+class SchubBffApplicationTests {
 
 
 }

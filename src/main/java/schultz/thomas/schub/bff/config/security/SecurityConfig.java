@@ -1,4 +1,4 @@
-package fr.schub.schubback.api.config.security;
+package schultz.thomas.schub.bff.config.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -54,7 +54,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/bot/gaming-server/public-status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/game-servers/public-status").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

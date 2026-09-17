@@ -1,4 +1,4 @@
-package fr.schub.schubback.api.config.security;
+package schultz.thomas.schub.bff.config.security;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

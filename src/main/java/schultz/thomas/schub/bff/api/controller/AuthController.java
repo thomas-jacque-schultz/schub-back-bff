@@ -1,7 +1,7 @@
-package fr.schub.schubback.api.controllers.controller;
+package schultz.thomas.schub.bff.api.controller;
 
-import fr.schub.schubback.api.config.security.JwtProperties;
-import fr.schub.schubback.api.config.security.JwtService;
+import schultz.thomas.schub.bff.config.security.JwtProperties;
+import schultz.thomas.schub.bff.config.security.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

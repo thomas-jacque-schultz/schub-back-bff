@@ -1,4 +1,4 @@
-package fr.schub.schubback.api;
+package schultz.thomas.schub.bff;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -6,9 +6,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableFeignClients
-public class SchubBackApplication {
+public class SchubBffApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SchubBackApplication.class, args);
+        SpringApplication.run(SchubBffApplication.class, args);
     }
 }
