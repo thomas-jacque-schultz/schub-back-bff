@@ -1,4 +1,4 @@
-package fr.schub.schubback.api.config.security;
+package schultz.thomas.schub.bff.config.security;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;

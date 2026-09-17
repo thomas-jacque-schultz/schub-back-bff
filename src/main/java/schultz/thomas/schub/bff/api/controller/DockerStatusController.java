@@ -1,4 +1,4 @@
-package fr.schub.schubback.api.controllers.controller;
+package schultz.thomas.schub.bff.api.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
