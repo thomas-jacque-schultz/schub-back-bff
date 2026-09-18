@@ -35,8 +35,19 @@ public class IdentityService {
      * pour une indisponibilité passagère.</p>
      */
     public Optional<UserIdentityDto> identity(String discordId, String discordUsername) {
+        return identity(discordId, discordUsername, null);
+    }
+
+    /**
+     * Variante de la connexion Discord : le pseudo et l'avatar viennent d'être lus dans
+     * {@code /users/@me}, et le cœur les rafraîchit au passage.
+     *
+     * <p>C'est le BFF qui les fournit parce qu'il est le seul à avoir parlé à Discord — le cœur
+     * ne connaît pas cette API et ne doit pas l'apprendre (plan §1).</p>
+     */
+    public Optional<UserIdentityDto> identity(String discordId, String discordUsername, String avatarUrl) {
         try {
-            return Optional.ofNullable(core.getIdentity(discordId, discordUsername, null));
+            return Optional.ofNullable(core.getIdentity(discordId, discordUsername, avatarUrl));
         } catch (Exception ex) {
             log.warn("Identité indisponible pour l'acteur {} : {}", discordId, ex.getMessage());
             return Optional.empty();

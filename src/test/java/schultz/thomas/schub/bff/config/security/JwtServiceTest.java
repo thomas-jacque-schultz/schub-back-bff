@@ -26,10 +26,15 @@ class JwtServiceTest {
     @Test
     @DisplayName("le sujet est l'identifiant Discord, et les permissions voyagent dans le jeton")
     void contenuDuJeton() {
-        String token = service.generateToken("227883780512153610", "pisel",
+        String token = service.generateToken("227883780512153610", "66f0a1b2c3d4e5f6a7b8c9d0", "pisel",
                 List.of("ROLE_ADMIN"), List.of("SERVER_VIEW", "PORT_RULE_EDIT"));
 
         assertThat(service.extractActorId(token)).isEqualTo("227883780512153610");
+        // Les deux identités du jeton, et c'est tout le sujet du correctif : le sujet est
+        // l'identifiant Discord — ce que le BFF repasse au cœur — tandis que `userId` est l'id
+        // interne, seul comparable aux `admins` d'un serveur.
+        assertThat(service.extractUserId(token)).isEqualTo("66f0a1b2c3d4e5f6a7b8c9d0");
+        assertThat(service.extractUserId(token)).isNotEqualTo(service.extractActorId(token));
         assertThat(service.claims(token).get(JwtService.CLAIM_USERNAME)).isEqualTo("pisel");
         assertThat(service.extractRoles(token)).containsExactly("ROLE_ADMIN");
         assertThat(service.extractPermissions(token)).containsExactly("SERVER_VIEW", "PORT_RULE_EDIT");
@@ -39,7 +44,7 @@ class JwtServiceTest {
     @Test
     @DisplayName("un jeton frais ne se réémet pas")
     void jetonFrais() {
-        assertThat(service.shouldRenew(service.generateToken("1", "x", List.of(), List.of()))).isFalse();
+        assertThat(service.shouldRenew(service.generateToken("1", "user-1", "x", List.of(), List.of()))).isFalse();
     }
 
     @Test
@@ -51,7 +56,7 @@ class JwtServiceTest {
         JwtService courtTerme = new JwtService(new JwtProperties(SECRET, 100));
         JwtService longTerme = new JwtService(new JwtProperties(SECRET, 1000));
 
-        String token = courtTerme.generateToken("1", "x", List.of(), List.of("SERVER_VIEW"));
+        String token = courtTerme.generateToken("1", "user-1", "x", List.of(), List.of("SERVER_VIEW"));
 
         assertThat(longTerme.shouldRenew(token)).isTrue();
     }
@@ -60,7 +65,7 @@ class JwtServiceTest {
     @DisplayName("un jeton expiré est rejeté à la lecture, il ne se réémet jamais")
     void jetonExpire() {
         JwtService expire = new JwtService(new JwtProperties(SECRET, -1));
-        String token = expire.generateToken("1", "x", List.of(), List.of());
+        String token = expire.generateToken("1", "user-1", "x", List.of(), List.of());
 
         // jjwt refuse un jeton expiré dès l'analyse plutôt que de rendre des claims périmées.
         // C'est ce qu'on veut : la réémission glissante ne peut pas ressusciter une session
