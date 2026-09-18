@@ -43,7 +43,7 @@ import java.util.List;
  */
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, AuthAdminProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, AuthAdminProperties.class, DiscordOAuthProperties.class})
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -61,6 +61,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // CSRF désactivé, et c'est ce que `SameSite=Lax` sur le cookie de session rend
+                // tenable : toutes les écritures sont POST/PUT/DELETE, et `Lax` ne joint pas le
+                // cookie à une écriture initiée par un autre site. Le jour où une écriture passe
+                // en GET, cette ligne devient une faille — c'est le seul invariant à tenir
+                // (plan §A.3).
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
