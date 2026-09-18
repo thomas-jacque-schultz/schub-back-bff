@@ -28,6 +28,19 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * La chaîne de sécurité du BFF.
+ *
+ * <p>{@code anyRequest().authenticated()} reste le filet, mais il n'est plus le seul contrôle :
+ * chaque route porte désormais sa permission en {@code @PreAuthorize} — c'est ce que
+ * {@code @EnableMethodSecurity} rend possible, et c'est le préalable absolu à l'ouverture de la
+ * connexion Discord (plan §A.0). Trois chemins restent publics et le sont explicitement :
+ * {@code /auth/**}, la sonde de santé et le statut public des serveurs.</p>
+ *
+ * <p>Le compte par mot de passe et son {@code InMemoryUserDetailsManager} sont conservés : leur
+ * retrait est le dernier lot du chantier (A.6), dans une PR à part, après qu'une connexion
+ * Discord a fonctionné en prod.</p>
+ */
 @Configuration
 @EnableMethodSecurity
 @EnableConfigurationProperties({JwtProperties.class, AuthAdminProperties.class})
@@ -71,6 +84,10 @@ public class SecurityConfig {
                 .toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        // Sans cette ligne, le navigateur reçoit le jeton renouvelé et le cache au front : un
+        // en-tête de réponse non exposé est illisible en JavaScript, et la réémission glissante
+        // serait invisible. Disparaîtra au lot A.3, quand le jeton passera en cookie httpOnly.
+        configuration.setExposedHeaders(List.of(JwtAuthenticationFilter.RENEWED_TOKEN_HEADER));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
