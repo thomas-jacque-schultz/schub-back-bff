@@ -24,6 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import schultz.thomas.schub.bff.config.ContactProperties;
 
 import java.util.Arrays;
 import java.util.List;
@@ -43,7 +44,8 @@ import java.util.List;
  */
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, AuthAdminProperties.class, DiscordOAuthProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, AuthAdminProperties.class, DiscordOAuthProperties.class,
+        ContactProperties.class})
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -73,6 +75,17 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/game-servers/public-status").permitAll()
+                        // Le formulaire de contact du portfolio : PUBLIC, et en écriture.
+                        //
+                        // C'est la seule route du BFF dans ce cas, et elle n'a pas d'alternative —
+                        // un formulaire de contact derrière une authentification ne sert à rien.
+                        // Sans cette ligne elle répondrait 401 à tout le monde, `anyRequest()`
+                        // étant `authenticated()`.
+                        //
+                        // Ce qui la protège est ailleurs, dans ContactService : limitation de
+                        // débit par IP, champ leurre, et Turnstile si un secret est fourni.
+                        // AUCUNE de ces trois couches ne se retire sans en ajouter une autre.
+                        .requestMatchers(HttpMethod.POST, "/contact").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
