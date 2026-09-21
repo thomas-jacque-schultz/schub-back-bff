@@ -64,43 +64,44 @@ public interface CoreFeignClient {
 
     // --- le profil de l'appelant (menu « Mon profil ») ---
     //
-    // Toutes sous `/users/me` : l'acteur de l'en-tête X-Actor-Id est le sujet de la route, et il
-    // n'existe aucun chemin vers le profil de quelqu'un d'autre. Les chemins restent ceux du
-    // cœur — le BFF route, il ne réécrit pas le vocabulaire.
+    // Les chemins sont ceux du cœur, qui en a deux : `/me` pour l'identité et le nom affiché,
+    // `/users/me/riot-account` pour le compte Riot. Le BFF route et ne réécrit pas le
+    // vocabulaire — les uniformiser ici ferait diverger les deux moitiés du même profil.
+    //
+    // Aucune ne prend d'identifiant : l'acteur de X-Actor-Id EST le sujet, et il n'existe aucun
+    // chemin vers le profil de quelqu'un d'autre.
 
-    @GetMapping("/users/me")
+    @GetMapping("/me")
     byte[] getMe();
 
-    @PutMapping("/users/me/display-name")
+    @PutMapping("/me/display-name")
     byte[] updateMyDisplayName(@RequestBody Object body);
 
     @GetMapping("/users/me/riot-account")
     byte[] getMyRiotAccount();
 
+    /**
+     * Déclare, relance ou remplace le Riot ID de l'appelant.
+     *
+     * <p>Le remplacement d'un autre compte sans {@code confirmChange} répond <strong>409 avec un
+     * objet {@code change}</strong> qui dit ce que le changement emporte. Ce n'est pas une erreur
+     * à masquer : c'est la réponse dont l'écran a besoin pour poser la question, et c'est ce qui
+     * évite une route de prévisualisation de plus. {@code UpstreamGateway} relaie le statut
+     * <em>et</em> le corps tels quels, donc le {@code change} traverse intact.</p>
+     */
     @PutMapping("/users/me/riot-account")
     byte[] linkMyRiotAccount(@RequestBody Object body);
 
     /**
-     * Les conséquences d'un changement de compte Riot, avant qu'il soit validé.
-     *
-     * <p>Rend des <strong>faits</strong> — parties conservées sur l'ancien compte, durée estimée
-     * du nouvel ingest — et non des phrases : le site est bilingue, une phrase servie par le cœur
-     * n'existerait que dans une langue. Les chiffres viennent d'ici, leur mise en forme du
-     * front.</p>
-     */
-    @GetMapping("/users/me/riot-account/change-preview")
-    byte[] previewRiotAccountChange(@RequestParam("riotId") String riotId);
-
-    /**
-     * Les comptes Riot déjà vus dans nos parties, approchant une saisie partielle.
+     * Les comptes Riot connus de nos parties qui ressemblent à cette saisie.
      *
      * <p>L'API Riot n'offre <strong>aucune</strong> recherche par pseudo partiel : la seule
      * matière possible est ce qu'on a déjà collecté. Une base vide rend une liste vide, ce qui
      * est une réponse et non une panne.</p>
      */
-    @GetMapping("/riot-accounts/search")
-    byte[] searchKnownRiotAccounts(@RequestParam("q") String query,
-                                   @RequestParam(value = "limit", required = false) Integer limit);
+    @GetMapping("/users/me/riot-account/suggestions")
+    byte[] suggestRiotAccounts(@RequestParam("q") String query,
+                               @RequestParam(value = "limit", required = false) Integer limit);
 
     @PutMapping("/users/{id}/role")
     byte[] assignRole(@PathVariable("id") String id, @RequestBody Object body);
