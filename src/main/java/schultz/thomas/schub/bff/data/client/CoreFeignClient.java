@@ -98,4 +98,64 @@ public interface CoreFeignClient {
 
     @GetMapping("/port-forwarding/status")
     byte[] getPortForwardingStatus();
+
+    // --- équipes (chantier D) ---
+    //
+    // L'API fusionnée du cœur, relayée telle quelle. Le BFF ne lit aucun de ces corps : les
+    // `viewerCanEdit`, `viewerCanEditCompositions` et `viewerMemberId` sont calculés par le cœur
+    // pour l'acteur transmis en `X-Actor-Id`, et le traversent sans être interprétés.
+
+    @GetMapping("/teams")
+    byte[] getTeams();
+
+    @PostMapping("/teams")
+    byte[] createTeam(@RequestBody Object body);
+
+    /** Revendication des places laissées à un Riot ID, après liaison du compte. */
+    @PostMapping("/teams/claim")
+    byte[] claimTeams();
+
+    @GetMapping("/teams/{teamId}")
+    byte[] getTeam(@PathVariable("teamId") String teamId);
+
+    @PutMapping("/teams/{teamId}")
+    byte[] renameTeam(@PathVariable("teamId") String teamId, @RequestBody Object body);
+
+    @DeleteMapping("/teams/{teamId}")
+    void deleteTeam(@PathVariable("teamId") String teamId);
+
+    @PostMapping("/teams/{teamId}/members")
+    byte[] addTeamMember(@PathVariable("teamId") String teamId, @RequestBody Object body);
+
+    @PutMapping("/teams/{teamId}/members/{memberId}")
+    byte[] updateTeamMember(@PathVariable("teamId") String teamId,
+                            @PathVariable("memberId") String memberId,
+                            @RequestBody Object body);
+
+    /**
+     * Retirer un membre rend l'équipe entière, et non 204 : c'est le contrat du cœur, et il évite
+     * au front un second appel pour redessiner l'effectif.
+     */
+    @DeleteMapping("/teams/{teamId}/members/{memberId}")
+    byte[] removeTeamMember(@PathVariable("teamId") String teamId,
+                            @PathVariable("memberId") String memberId);
+
+    @GetMapping("/teams/{teamId}/compositions")
+    byte[] getCompositions(@PathVariable("teamId") String teamId);
+
+    @GetMapping("/teams/{teamId}/compositions/{compositionId}")
+    byte[] getComposition(@PathVariable("teamId") String teamId,
+                          @PathVariable("compositionId") String compositionId);
+
+    @PostMapping("/teams/{teamId}/compositions")
+    byte[] createComposition(@PathVariable("teamId") String teamId, @RequestBody Object body);
+
+    @PutMapping("/teams/{teamId}/compositions/{compositionId}")
+    byte[] updateComposition(@PathVariable("teamId") String teamId,
+                             @PathVariable("compositionId") String compositionId,
+                             @RequestBody Object body);
+
+    @DeleteMapping("/teams/{teamId}/compositions/{compositionId}")
+    void deleteComposition(@PathVariable("teamId") String teamId,
+                           @PathVariable("compositionId") String compositionId);
 }
