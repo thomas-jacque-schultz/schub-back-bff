@@ -203,6 +203,28 @@ public interface CoreFeignClient {
     void deleteComposition(@PathVariable("teamId") String teamId,
                            @PathVariable("compositionId") String compositionId);
 
+    // --- revue par joueur (D.10) ---
+
+    @GetMapping("/teams/{teamId}/games/{matchId}/reviews")
+    byte[] getGameReviews(@PathVariable("teamId") String teamId,
+                          @PathVariable("matchId") String matchId);
+
+    @PostMapping("/teams/{teamId}/games/{matchId}/reviews")
+    byte[] createGameReview(@PathVariable("teamId") String teamId,
+                            @PathVariable("matchId") String matchId,
+                            @RequestBody Object body);
+
+    @PutMapping("/teams/{teamId}/games/{matchId}/reviews/{reviewId}")
+    byte[] updateGameReview(@PathVariable("teamId") String teamId,
+                            @PathVariable("matchId") String matchId,
+                            @PathVariable("reviewId") String reviewId,
+                            @RequestBody Object body);
+
+    @DeleteMapping("/teams/{teamId}/games/{matchId}/reviews/{reviewId}")
+    void deleteGameReview(@PathVariable("teamId") String teamId,
+                          @PathVariable("matchId") String matchId,
+                          @PathVariable("reviewId") String reviewId);
+
     // --- pool de champions (D.5) et panneaux statistiques (D.8, D.9) ---
     //
     // Les paramètres de fenêtre traversent tels quels : le BFF ne borne rien, le cœur borne tout.

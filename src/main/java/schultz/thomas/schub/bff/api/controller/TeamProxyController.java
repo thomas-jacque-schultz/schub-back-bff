@@ -161,4 +161,44 @@ public class TeamProxyController {
                                             @RequestParam(required = false) Integer limit) {
         return gateway.call(UPSTREAM, () -> core.getTeamGamesStats(teamId, days, limit));
     }
+
+    /**
+     * La revue d'après-match (D.10). {@code isAuthenticated()} comme les autres routes d'équipe :
+     * « qui a le droit d'écrire sur qui » dépend de l'appartenance à cette équipe et de la place
+     * du sujet, deux choses que le jeton ne porte pas et que le BFF ne peut pas deviner.
+     */
+    @GetMapping("/{teamId}/games/{matchId}/reviews")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> gameReviews(@PathVariable String teamId,
+                                              @PathVariable String matchId) {
+        return gateway.call(UPSTREAM, () -> core.getGameReviews(teamId, matchId));
+    }
+
+    @PostMapping("/{teamId}/games/{matchId}/reviews")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> createGameReview(@PathVariable String teamId,
+                                                   @PathVariable String matchId,
+                                                   @RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, HttpStatus.CREATED,
+                () -> core.createGameReview(teamId, matchId, gateway.parseBody(body)));
+    }
+
+    @PutMapping("/{teamId}/games/{matchId}/reviews/{reviewId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> updateGameReview(@PathVariable String teamId,
+                                                   @PathVariable String matchId,
+                                                   @PathVariable String reviewId,
+                                                   @RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM,
+                () -> core.updateGameReview(teamId, matchId, reviewId, gateway.parseBody(body)));
+    }
+
+    @DeleteMapping("/{teamId}/games/{matchId}/reviews/{reviewId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> deleteGameReview(@PathVariable String teamId,
+                                                   @PathVariable String matchId,
+                                                   @PathVariable String reviewId) {
+        return gateway.callVoid(UPSTREAM,
+                () -> core.deleteGameReview(teamId, matchId, reviewId));
+    }
 }
