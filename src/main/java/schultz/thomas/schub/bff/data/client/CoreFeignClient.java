@@ -199,4 +199,30 @@ public interface CoreFeignClient {
     @DeleteMapping("/teams/{teamId}/compositions/{compositionId}")
     void deleteComposition(@PathVariable("teamId") String teamId,
                            @PathVariable("compositionId") String compositionId);
+
+    // --- pool de champions (D.5) et panneaux statistiques (D.8, D.9) ---
+    //
+    // Les paramètres de fenêtre traversent tels quels : le BFF ne borne rien, le cœur borne tout.
+
+    @GetMapping("/teams/{teamId}/champion-pool")
+    byte[] getChampionPool(@PathVariable("teamId") String teamId,
+                           @RequestParam(value = "champions", required = false) Integer champions);
+
+    @GetMapping("/teams/{teamId}/stats/players")
+    byte[] getTeamPlayersStats(@PathVariable("teamId") String teamId,
+                               @RequestParam(value = "days", required = false) Integer days,
+                               @RequestParam(value = "champions", required = false) Integer champions);
+
+    @GetMapping("/teams/{teamId}/stats/team")
+    byte[] getTeamGamesStats(@PathVariable("teamId") String teamId,
+                             @RequestParam(value = "days", required = false) Integer days,
+                             @RequestParam(value = "limit", required = false) Integer limit);
+
+    /**
+     * Aucun second paramètre : le sujet est l'acteur de {@code X-Actor-Id}. Il n'existe pas de
+     * chemin portant un puuid, et c'est ce qui empêche de sonder l'historique d'un autre.
+     */
+    @GetMapping("/me/stats")
+    byte[] getMyStats(@RequestParam(value = "days", required = false) Integer days,
+                      @RequestParam(value = "champions", required = false) Integer champions);
 }

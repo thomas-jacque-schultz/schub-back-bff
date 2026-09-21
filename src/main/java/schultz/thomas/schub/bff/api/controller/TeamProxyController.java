@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -132,5 +133,32 @@ public class TeamProxyController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> removeMember(@PathVariable String teamId, @PathVariable String memberId) {
         return gateway.call(UPSTREAM, () -> core.removeTeamMember(teamId, memberId));
+    }
+
+    /**
+     * Les trois lectures de panneau. {@code isAuthenticated()} et rien de plus : {@code TEAM_VIEW}
+     * est à portée d'équipe, le jeton ne la porte pas, et c'est le cœur qui tranche.
+     */
+    @GetMapping("/{teamId}/champion-pool")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> championPool(@PathVariable String teamId,
+                                               @RequestParam(required = false) Integer champions) {
+        return gateway.call(UPSTREAM, () -> core.getChampionPool(teamId, champions));
+    }
+
+    @GetMapping("/{teamId}/stats/players")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> playersStats(@PathVariable String teamId,
+                                               @RequestParam(required = false) Integer days,
+                                               @RequestParam(required = false) Integer champions) {
+        return gateway.call(UPSTREAM, () -> core.getTeamPlayersStats(teamId, days, champions));
+    }
+
+    @GetMapping("/{teamId}/stats/team")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> teamStats(@PathVariable String teamId,
+                                            @RequestParam(required = false) Integer days,
+                                            @RequestParam(required = false) Integer limit) {
+        return gateway.call(UPSTREAM, () -> core.getTeamGamesStats(teamId, days, limit));
     }
 }
