@@ -74,7 +74,7 @@ class DiscordAuthControllerTest {
     private void construire(DiscordOAuthProperties properties) {
         discord = mock(DiscordOAuthService.class);
         identityService = mock(IdentityService.class);
-        jwtService = new JwtService(new JwtProperties(SECRET, 900));
+        jwtService = new JwtService(new JwtProperties(SECRET, 900, 450));
         AuthCookies cookies = new AuthCookies(true);
 
         when(discord.randomUrlSafeValue()).thenReturn(STATE);
@@ -83,7 +83,7 @@ class DiscordAuthControllerTest {
 
         mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController(
                 discord, properties, identityService, jwtService,
-                new JwtProperties(SECRET, 900), cookies)).build();
+                new JwtProperties(SECRET, 900, 450), cookies)).build();
     }
 
     private UserIdentityDto identite() {

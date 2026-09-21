@@ -117,9 +117,12 @@ public class JwtService {
      * la réponse est d'allonger la durée, pas d'ajouter un refresh token.</p>
      */
     public boolean shouldRenew(String token) {
-        Date expiration = claims(token).getExpiration();
-        long remaining = expiration.getTime() - System.currentTimeMillis();
-        return remaining > 0 && remaining < (jwtProperties.expirationSeconds() * 1000L) / 2;
+        Claims claims = claims(token);
+        if (claims.getExpiration().getTime() <= System.currentTimeMillis()) {
+            return false;
+        }
+        long age = System.currentTimeMillis() - claims.getIssuedAt().getTime();
+        return age >= jwtProperties.renewAfterSeconds() * 1000L;
     }
 
     private List<String> stringList(Object claim) {
