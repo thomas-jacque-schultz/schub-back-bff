@@ -18,9 +18,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  * <p>Depuis le 18-09 s'y ajoute {@code X-Actor-Id} : l'identifiant Discord de la personne au nom
  * de qui l'appel est fait. C'est ce qui permet au cœur d'appliquer le contrôle fin — lui seul
- * sait qu'un compte figure dans les {@code admins} d'un serveur. <strong>Et c'est précisément le
- * secret interne qui rend cette assertion croyable</strong> : sans lui, n'importe qui
- * affirmerait n'importe quelle identité (plan §A.2).</p>
+ * connaît les appartenances. <strong>Et c'est précisément le secret interne qui rend cette
+ * assertion croyable</strong> : sans lui, n'importe qui affirmerait n'importe quelle identité
+ * (plan §A.2).</p>
  *
  * <p>Absent sur les routes publiques, où il n'y a personne derrière la requête — le cœur traite
  * alors l'appel comme venant d'un service, et ne sert que ce qui n'est pas de l'infrastructure.</p>

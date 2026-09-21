@@ -37,9 +37,8 @@ public class JwtService {
      * jeton, qui est l'identifiant Discord.
      *
      * <p>Les deux sont nécessaires et ne sont pas interchangeables : le sujet part au cœur dans
-     * {@code X-Actor-Id}, tandis que c'est l'id interne que contiennent les {@code admins} d'un
-     * serveur (plan §A.4). Sans ce claim, {@code /auth/me} ne peut rendre que le premier, et le
-     * front n'a rien à comparer aux administrateurs qu'on lui affiche.</p>
+     * {@code X-Actor-Id}, tandis que l'id interne est la clé de l'appelant dans les collections du
+     * cœur. C'est le sien, donc {@code /auth/me} peut le rendre sans rien apprendre sur autrui.</p>
      */
     static final String CLAIM_USER_ID = "userId";
     static final String CLAIM_PERMISSIONS = "permissions";
@@ -53,8 +52,8 @@ public class JwtService {
 
     /**
      * @param actorId     identifiant Discord — le sujet du jeton, et l'acteur transmis au cœur
-     * @param userId      id interne du compte dans le cœur ; c'est lui qu'on compare aux
-     *                    {@code admins} d'un serveur, jamais l'identifiant Discord
+     * @param userId      id interne du compte dans le cœur, à ne pas confondre avec l'identifiant
+     *                    Discord
      * @param username    pseudo, pour l'affichage seul
      * @param roles       conservés pour ce qui raisonne encore en rôles ; les décisions
      *                    d'autorisation, elles, se prennent sur les permissions

@@ -127,15 +127,8 @@ public class AuthController {
      *
      * <p><strong>{@code actorId} et {@code userId} ne sont pas la même chose, et il faut les
      * deux.</strong> {@code actorId} est l'identifiant Discord — le sujet du jeton, ce que le BFF
-     * repasse au cœur. {@code userId} est l'id interne du compte, et c'est <em>lui seul</em> que
-     * contiennent les {@code admins} d'un serveur (plan §A.4). Tant que {@code /auth/me} ne
-     * rendait que le premier, le front n'avait rien à comparer : il proposait démarrer/arrêter à
-     * tout compte connecté, et le cœur répondait 403 après le clic.</p>
-     *
-     * <p>Ce n'est pas une fuite : c'est l'id de l'appelant lui-même. L'id interne d'un
-     * <em>autre</em> compte, lui, ne sort que dans la projection infra d'un serveur, derrière
-     * {@code SERVER_INFRA_VIEW}. Pour les autres, le cœur répond par le booléen
-     * {@code viewerIsAdmin}, qui ne nomme personne.</p>
+     * repasse au cœur ; {@code userId} est l'id interne du compte, la clé de l'appelant dans les
+     * collections du cœur. Ce n'est pas une fuite : c'est son id à lui.</p>
      *
      * <p>Le jeton est repris de l'attribut posé par le filtre, donc indifféremment du cookie ou
      * de l'en-tête {@code Authorization} — les deux transports vivent côte à côte le temps de la
