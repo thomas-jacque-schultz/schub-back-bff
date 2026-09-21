@@ -21,7 +21,7 @@ class JwtServiceTest {
 
     private static final String SECRET = "un-secret-de-test-assez-long-pour-hmac-sha256-oui-vraiment";
 
-    private final JwtService service = new JwtService(new JwtProperties(SECRET, 900));
+    private final JwtService service = new JwtService(new JwtProperties(SECRET, 900, 450));
 
     @Test
     @DisplayName("le sujet est l'identifiant Discord, et les permissions voyagent dans le jeton")
@@ -49,22 +49,18 @@ class JwtServiceTest {
 
     @Test
     @DisplayName("un jeton qui a passé la moitié de sa vie se réémet")
-    void jetonAMiVie() {
-        // Le jeton est émis pour 100 s, puis relu par un service qui croit la durée de 1000 s :
-        // il reste donc 100 s sur une vie théorique de 1000, soit bien moins de la moitié.
-        // Une horloge déplacée plutôt qu'un sleep — le test reste instantané et déterministe.
-        JwtService courtTerme = new JwtService(new JwtProperties(SECRET, 100));
-        JwtService longTerme = new JwtService(new JwtProperties(SECRET, 1000));
+    void renouvelleSelonLAgeEtNonLeResteAVivre() {
+        JwtService emetteur = new JwtService(new JwtProperties(SECRET, 1000, 500));
+        String token = emetteur.generateToken("1", "user-1", "x", List.of(), List.of("SERVER_VIEW"));
 
-        String token = courtTerme.generateToken("1", "user-1", "x", List.of(), List.of("SERVER_VIEW"));
-
-        assertThat(longTerme.shouldRenew(token)).isTrue();
+        assertThat(new JwtService(new JwtProperties(SECRET, 1000, 0)).shouldRenew(token)).isTrue();
+        assertThat(new JwtService(new JwtProperties(SECRET, 1000, 500)).shouldRenew(token)).isFalse();
     }
 
     @Test
     @DisplayName("un jeton expiré est rejeté à la lecture, il ne se réémet jamais")
     void jetonExpire() {
-        JwtService expire = new JwtService(new JwtProperties(SECRET, -1));
+        JwtService expire = new JwtService(new JwtProperties(SECRET, -1, 0));
         String token = expire.generateToken("1", "user-1", "x", List.of(), List.of());
 
         // jjwt refuse un jeton expiré dès l'analyse plutôt que de rendre des claims périmées.
