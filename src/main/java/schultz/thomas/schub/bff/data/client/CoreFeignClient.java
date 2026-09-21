@@ -226,12 +226,20 @@ public interface CoreFeignClient {
                           @PathVariable("reviewId") String reviewId);
 
     // --- pool de champions (D.5) et panneaux statistiques (D.8, D.9) ---
-    //
-    // Les paramètres de fenêtre traversent tels quels : le BFF ne borne rien, le cœur borne tout.
+    // Les paramètres traversent tels quels : le BFF ne borne rien, le cœur borne tout.
 
     @GetMapping("/teams/{teamId}/champion-pool")
     byte[] getChampionPool(@PathVariable("teamId") String teamId,
-                           @RequestParam(value = "champions", required = false) Integer champions);
+                           @RequestParam(value = "masteryFloor", required = false) Integer masteryFloor);
+
+    @PutMapping("/teams/{teamId}/champion-pool/roles/{role}")
+    byte[] setPoolChampions(@PathVariable("teamId") String teamId,
+                            @PathVariable("role") String role,
+                            @RequestBody Object body);
+
+    @PutMapping("/teams/{teamId}/champion-pool/mastery-floor")
+    byte[] setPoolMasteryFloor(@PathVariable("teamId") String teamId,
+                               @RequestBody Object body);
 
     @GetMapping("/teams/{teamId}/stats/players")
     byte[] getTeamPlayersStats(@PathVariable("teamId") String teamId,

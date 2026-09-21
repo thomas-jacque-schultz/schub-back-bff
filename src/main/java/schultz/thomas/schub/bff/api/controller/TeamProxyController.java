@@ -139,8 +139,30 @@ public class TeamProxyController {
     @GetMapping("/{teamId}/champion-pool")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> championPool(@PathVariable String teamId,
-                                               @RequestParam(required = false) Integer champions) {
-        return gateway.call(UPSTREAM, () -> core.getChampionPool(teamId, champions));
+                                               @RequestParam(required = false) Integer masteryFloor) {
+        return gateway.call(UPSTREAM, () -> core.getChampionPool(teamId, masteryFloor));
+    }
+
+    /**
+     * Choisir les champions d'un poste, et régler le plancher de maîtrise.
+     *
+     * <p>{@code isAuthenticated()} comme les lectures : l'écriture demande
+     * {@code COMPOSITION_EDIT} <em>sur cette équipe</em>, une permission de portée que le jeton
+     * ne porte pas. Le cœur tranche.</p>
+     */
+    @PutMapping("/{teamId}/champion-pool/roles/{role}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> setPoolChampions(@PathVariable String teamId,
+                                                   @PathVariable String role,
+                                                   @RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.setPoolChampions(teamId, role, gateway.parseBody(body)));
+    }
+
+    @PutMapping("/{teamId}/champion-pool/mastery-floor")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> setPoolMasteryFloor(@PathVariable String teamId,
+                                                      @RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.setPoolMasteryFloor(teamId, gateway.parseBody(body)));
     }
 
     @GetMapping("/{teamId}/stats/players")
