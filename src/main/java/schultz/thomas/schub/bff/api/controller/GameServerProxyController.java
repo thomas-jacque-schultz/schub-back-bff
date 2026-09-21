@@ -78,22 +78,17 @@ public class GameServerProxyController {
     /**
      * Démarrage et arrêt, repérés par le slug.
      *
-     * <p><strong>Le BFF exige {@code SERVER_VIEW} ici, et pas {@code SERVER_START}, et c'est
-     * délibéré.</strong> Être administrateur d'un serveur donne le droit de le démarrer sans que
-     * le rôle porte {@code SERVER_START} (décision n°11) — or le BFF ne connaît pas la liste des
-     * {@code admins}, qui vit dans le cœur. Exiger {@code SERVER_START} ici refuserait à un
-     * administrateur de serveur une action que le cœur lui accorde, et la décision n°11 ne
-     * vaudrait plus que pour Discord. Le contrôle grossier s'arrête donc à « c'est un membre
-     * connecté » ; le contrôle fin est dans le cœur, seul à pouvoir le faire (plan §A.2).</p>
+     * <p>Le jeton porte ces permissions, puisqu'elles viennent du rôle et de rien d'autre : le
+     * BFF peut donc refuser tout de suite. Le cœur revérifie — c'est lui la règle.</p>
      */
     @PostMapping("/{slug}/start")
-    @PreAuthorize("hasAuthority('SERVER_VIEW')")
+    @PreAuthorize("hasAuthority('SERVER_START')")
     public ResponseEntity<byte[]> start(@PathVariable String slug) {
         return gateway.callVoid(UPSTREAM, () -> core.startGameServer(slug));
     }
 
     @PostMapping("/{slug}/stop")
-    @PreAuthorize("hasAuthority('SERVER_VIEW')")
+    @PreAuthorize("hasAuthority('SERVER_STOP')")
     public ResponseEntity<byte[]> stop(@PathVariable String slug) {
         return gateway.callVoid(UPSTREAM, () -> core.stopGameServer(slug));
     }

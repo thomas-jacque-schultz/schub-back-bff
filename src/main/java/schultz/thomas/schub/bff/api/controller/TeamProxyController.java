@@ -30,12 +30,9 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Conséquence directe : exiger {@code TEAM_VIEW} à la porte refuserait à un capitaine l'accès
  * à sa propre équipe, puisque le rôle {@code VISITEUR} ne porte que {@code SERVER_VIEW} et
- * {@code TEAM_CREATE}. C'est exactement le piège que
- * {@link GameServerProxyController#start(String)} a désamorcé pour le démarrage d'un serveur :
- * le contrôle grossier s'y arrête à « c'est un membre connecté », le contrôle fin est dans le
- * cœur, seul à connaître les {@code admins}. Ici, la même règle donne
- * {@code isAuthenticated()} — à la différence des serveurs, il n'existe aucune permission
- * globale de lecture d'équipe dont on pourrait se servir comme filet.</p>
+ * {@code TEAM_CREATE}. Le contrôle grossier s'arrête donc à « c'est un compte connecté », et le
+ * contrôle fin est dans le cœur, seul à connaître les effectifs. C'est l'inverse des serveurs,
+ * dont le pilotage vient du rôle et se refuse donc dès le BFF.</p>
  *
  * <p><strong>La seule route qui porte une permission est la création</strong>, et c'est le cas
  * symétrique : {@code TEAM_CREATE} est globale, sans ressource — le cœur l'évalue lui aussi sans
