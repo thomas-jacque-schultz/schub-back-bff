@@ -62,6 +62,46 @@ public interface CoreFeignClient {
     @GetMapping("/users")
     byte[] getUsers();
 
+    // --- le profil de l'appelant (menu « Mon profil ») ---
+    //
+    // Toutes sous `/users/me` : l'acteur de l'en-tête X-Actor-Id est le sujet de la route, et il
+    // n'existe aucun chemin vers le profil de quelqu'un d'autre. Les chemins restent ceux du
+    // cœur — le BFF route, il ne réécrit pas le vocabulaire.
+
+    @GetMapping("/users/me")
+    byte[] getMe();
+
+    @PutMapping("/users/me/display-name")
+    byte[] updateMyDisplayName(@RequestBody Object body);
+
+    @GetMapping("/users/me/riot-account")
+    byte[] getMyRiotAccount();
+
+    @PutMapping("/users/me/riot-account")
+    byte[] linkMyRiotAccount(@RequestBody Object body);
+
+    /**
+     * Les conséquences d'un changement de compte Riot, avant qu'il soit validé.
+     *
+     * <p>Rend des <strong>faits</strong> — parties conservées sur l'ancien compte, durée estimée
+     * du nouvel ingest — et non des phrases : le site est bilingue, une phrase servie par le cœur
+     * n'existerait que dans une langue. Les chiffres viennent d'ici, leur mise en forme du
+     * front.</p>
+     */
+    @GetMapping("/users/me/riot-account/change-preview")
+    byte[] previewRiotAccountChange(@RequestParam("riotId") String riotId);
+
+    /**
+     * Les comptes Riot déjà vus dans nos parties, approchant une saisie partielle.
+     *
+     * <p>L'API Riot n'offre <strong>aucune</strong> recherche par pseudo partiel : la seule
+     * matière possible est ce qu'on a déjà collecté. Une base vide rend une liste vide, ce qui
+     * est une réponse et non une panne.</p>
+     */
+    @GetMapping("/riot-accounts/search")
+    byte[] searchKnownRiotAccounts(@RequestParam("q") String query,
+                                   @RequestParam(value = "limit", required = false) Integer limit);
+
     @PutMapping("/users/{id}/role")
     byte[] assignRole(@PathVariable("id") String id, @RequestBody Object body);
 
