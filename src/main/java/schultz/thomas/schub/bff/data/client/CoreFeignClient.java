@@ -64,6 +64,9 @@ public interface CoreFeignClient {
 
     // --- le profil de l'appelant (menu « Mon profil ») ---
     //
+    @GetMapping("/ingest/load")
+    byte[] getIngestLoad();
+
     // Les chemins sont ceux du cœur, qui en a deux : `/me` pour l'identité et le nom affiché,
     // `/users/me/riot-account` pour le compte Riot. Le BFF route et ne réécrit pas le
     // vocabulaire — les uniformiser ici ferait diverger les deux moitiés du même profil.
