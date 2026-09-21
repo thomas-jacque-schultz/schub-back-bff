@@ -43,12 +43,10 @@ class JwtAuthenticationFilterTest {
     @BeforeEach
     void setUp() {
         identityService = mock(IdentityService.class);
-        // Le service qui lit croit à une durée de 1000 s alors que le jeton en porte 100 :
-        // il reste donc moins de la moitié de la vie théorique, et la réémission se déclenche.
-        // Une horloge déplacée plutôt qu'un sleep — le test reste instantané et déterministe.
-        lecteur = new JwtService(new JwtProperties(SECRET, 1000));
+        // renewAfter = 0 : tout jeton est renouvelable, ce que ces tests veulent exercer.
+        lecteur = new JwtService(new JwtProperties(SECRET, 1000, 0));
         filter = new JwtAuthenticationFilter(lecteur, identityService,
-                new AuthCookies(true), new JwtProperties(SECRET, 1000));
+                new AuthCookies(true), new JwtProperties(SECRET, 1000, 0));
     }
 
     @AfterEach
@@ -57,7 +55,7 @@ class JwtAuthenticationFilterTest {
     }
 
     private String jetonAMiVie() {
-        return new JwtService(new JwtProperties(SECRET, 100))
+        return new JwtService(new JwtProperties(SECRET, 1000, 0))
                 .generateToken(DISCORD_ID, USER_ID, "pisel", List.of(), List.of("SERVER_VIEW"));
     }
 
