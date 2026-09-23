@@ -6,6 +6,8 @@ import schultz.thomas.schub.bff.data.client.CoreFeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,5 +29,17 @@ public class IngestLoadProxyController {
     @PreAuthorize("hasAuthority('INGEST_VIEW')")
     public ResponseEntity<byte[]> load() {
         return gateway.call(UPSTREAM, core::getIngestLoad);
+    }
+
+    @GetMapping("/crawler")
+    @PreAuthorize("hasAuthority('INGEST_VIEW')")
+    public ResponseEntity<byte[]> crawler() {
+        return gateway.call(UPSTREAM, core::getCrawler);
+    }
+
+    @PutMapping("/crawler")
+    @PreAuthorize("hasAuthority('INGEST_MANAGE')")
+    public ResponseEntity<byte[]> toggleCrawler(@RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.toggleCrawler(gateway.parseBody(body)));
     }
 }

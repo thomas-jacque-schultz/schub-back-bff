@@ -49,6 +49,12 @@ public interface CoreFeignClient {
     @GetMapping("/ingest/load")
     byte[] getIngestLoad();
 
+    @GetMapping("/ingest/crawler")
+    byte[] getCrawler();
+
+    @PutMapping("/ingest/crawler")
+    byte[] toggleCrawler(@RequestBody Object body);
+
     @GetMapping("/me")
     byte[] getMe();
 
