@@ -200,6 +200,12 @@ public interface CoreFeignClient {
     byte[] getTeamGameDetail(@PathVariable("teamId") String teamId,
                              @PathVariable("matchId") String matchId);
 
+    @GetMapping("/teams/{teamId}/stats/refresh")
+    byte[] getTeamStatsRefresh(@PathVariable("teamId") String teamId);
+
+    @PostMapping("/teams/{teamId}/stats/refresh")
+    byte[] refreshTeamStats(@PathVariable("teamId") String teamId);
+
     @GetMapping("/teams/{teamId}/stats/opposition")
     byte[] getTeamOpposition(@PathVariable("teamId") String teamId,
                              @RequestParam(value = "days", required = false) Integer days);
