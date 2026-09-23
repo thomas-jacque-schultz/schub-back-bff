@@ -25,13 +25,22 @@ public class ReferenceProxyController {
         this.gateway = gateway;
     }
 
+    @GetMapping("/champions/{championId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> champion(@PathVariable int championId, @RequestParam String tier) {
+        return sansCorps(gateway.call(UPSTREAM, () -> core.getChampionGrid(championId, tier)));
+    }
+
     @GetMapping("/{position}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> grid(@PathVariable String position,
                                        @RequestParam(required = false) String scope,
                                        @RequestParam(required = false) String tier,
                                        @RequestParam(required = false) String patch) {
-        ResponseEntity<byte[]> reponse = gateway.call(UPSTREAM, () -> core.getReferenceGrid(position, scope, tier, patch));
+        return sansCorps(gateway.call(UPSTREAM, () -> core.getReferenceGrid(position, scope, tier, patch)));
+    }
+
+    private static ResponseEntity<byte[]> sansCorps(ResponseEntity<byte[]> reponse) {
         if (reponse.getStatusCode().is2xxSuccessful() && (reponse.getBody() == null || reponse.getBody().length == 0)) {
             return ResponseEntity.noContent().build();
         }

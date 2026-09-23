@@ -218,6 +218,9 @@ public interface CoreFeignClient {
                       @RequestParam(value = "patches", required = false) Integer patches,
                       @RequestParam(value = "champions", required = false) Integer champions);
 
+    @GetMapping("/lol/references/champions/{championId}")
+    byte[] getChampionGrid(@PathVariable("championId") int championId, @RequestParam("tier") String tier);
+
     @GetMapping("/lol/references/{position}")
     byte[] getReferenceGrid(@PathVariable("position") String position,
                             @RequestParam(value = "scope", required = false) String scope,
