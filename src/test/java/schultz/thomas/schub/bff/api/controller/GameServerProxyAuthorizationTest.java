@@ -11,14 +11,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Ce que les routes de serveur exigent, et pourquoi elles peuvent l'exiger.
- *
- * <p>Démarrer et arrêter demandaient {@code SERVER_VIEW} tant qu'un compte pouvait tenir ce droit
- * d'une liste d'administrateurs par serveur, que le BFF ne connaît pas. Cette liste n'existe
- * plus : les deux permissions viennent du rôle, le jeton les porte, et le refus se fait ici. Les
- * remettre à {@code SERVER_VIEW} rouvrirait le démarrage à tout compte connecté.</p>
- */
 class GameServerProxyAuthorizationTest {
 
     @Test
@@ -30,7 +22,6 @@ class GameServerProxyAuthorizationTest {
                 .isEqualTo("hasAuthority('SERVER_STOP')");
     }
 
-    /** {@code publicStatus} est la vue sans compte : son absence de règle est la règle. */
     @Test
     @DisplayName("toute route de serveur porte une règle explicite, sauf la vue publique")
     void touteRoutePorteUneRegle() {

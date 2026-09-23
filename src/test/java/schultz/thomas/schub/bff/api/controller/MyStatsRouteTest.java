@@ -12,10 +12,6 @@ import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * La garde qui ne se relit pas dans le code : rien n'empêche d'ajouter un jour un chemin portant
- * un puuid, et il suffirait d'un puuid croisé dans une réponse d'équipe pour sonder n'importe qui.
- */
 class MyStatsRouteTest {
 
     @Test

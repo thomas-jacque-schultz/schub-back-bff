@@ -11,13 +11,6 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-/**
- * Ce que le BFF demande à Discord, et ce qu'il ne demande pas.
- *
- * <p>Le scope est la partie qu'on élargit sans y penser, parce qu'un scope en trop ne casse
- * rien : le flux marche, l'utilisateur consent, et le site détient des données dont il n'a pas
- * l'usage. Ce test est là pour que l'élargissement soit un acte délibéré.</p>
- */
 class DiscordOAuthServiceTest {
 
     private static final String SECRET_CLIENT = "un-secret-qui-ne-doit-jamais-fuiter";
@@ -55,9 +48,6 @@ class DiscordOAuthServiceTest {
 
         assertThat(url).contains("code_challenge_method=S256");
         assertThat(url).contains("code_challenge=" + service.codeChallenge(verifier));
-        // Envoyer le vérifieur à l'aller viderait PKCE de son sens : c'est le fait qu'il ne
-        // transite qu'au retour, sur un canal serveur à serveur, qui prouve que celui qui
-        // échange le code est celui qui a commencé le flux.
         assertThat(url).doesNotContain(verifier);
     }
 
@@ -83,8 +73,6 @@ class DiscordOAuthServiceTest {
     @Test
     @DisplayName("le secret client n'apparaît ni dans l'URL d'autorisation, ni dans un toString")
     void leSecretNeSortPas() {
-        // Un record imprime tous ses composants par défaut : sans redéfinition, un simple
-        // log.debug("{}", properties) aurait suffi à poser le secret dans les journaux.
         assertThat(properties.toString()).doesNotContain(SECRET_CLIENT).contains("masqué");
         assertThat(service.authorizationUrl("s", "v")).doesNotContain(SECRET_CLIENT);
     }

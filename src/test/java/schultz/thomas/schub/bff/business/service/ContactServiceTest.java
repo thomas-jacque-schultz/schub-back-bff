@@ -14,19 +14,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Les couches anti-spam du formulaire de contact.
- *
- * <p>Ce sont elles qu'on teste, et pas le rendu du message : c'est la seule route publique en
- * écriture du système, et une couche désactivée par mégarde ne se verrait qu'au moment où la
- * messagerie déborde. Un test qui échoue est moins coûteux.</p>
- *
- * <p>Pas de Mockito ici : un faux client écrit à la main (six lignes) dit plus clairement ce
- * qu'on attend qu'une pile de {@code when(...).thenReturn(...)}.</p>
- */
 class ContactServiceTest {
 
-    /** Le connecteur, remplacé par un carnet : ce qu'on lui a demandé d'envoyer, et sa réponse. */
     private static final class FakeConnector implements ConnectorDiscordFeignClient {
 
         private final List<DirectMessageRequest> sent = new ArrayList<>();
@@ -64,7 +53,6 @@ class ContactServiceTest {
                 4000,
                 perIpPerHour,
                 60,
-                // Pas de secret : Turnstile est désactivé, exactement comme aujourd'hui en prod.
                 new ContactProperties.Turnstile("", "https://example.invalid/siteverify"));
     }
 
@@ -86,7 +74,6 @@ class ContactServiceTest {
                 .isEqualTo(ContactService.Outcome.DELIVERED);
         assertThat(connector.sent).hasSize(1);
         assertThat(connector.sent.get(0).recipientId()).isEqualTo("227883780512153610");
-        // L'adresse du visiteur voyage dans le corps : c'est le seul moyen de lui répondre.
         assertThat(connector.sent.get(0).body()).contains("camille@example.org");
     }
 
@@ -125,7 +112,6 @@ class ContactServiceTest {
         assertThat(limited.submit(request(""), "203.0.113.20")).isEqualTo(ContactService.Outcome.RATE_LIMITED);
         assertThat(limited.submit(request(""), "203.0.113.20")).isEqualTo(ContactService.Outcome.RATE_LIMITED);
 
-        // Une autre adresse n'est pas punie pour celle-là.
         assertThat(limited.submit(request(""), "203.0.113.21")).isEqualTo(ContactService.Outcome.DELIVERED);
     }
 

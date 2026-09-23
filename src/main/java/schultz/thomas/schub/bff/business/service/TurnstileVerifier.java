@@ -14,19 +14,6 @@ import schultz.thomas.schub.bff.config.ContactProperties;
 
 import java.util.Map;
 
-/**
- * Le rempart Cloudflare Turnstile, **inactif tant qu'aucun secret n'est fourni**.
- *
- * <p>C'est la condition posée au §4 du plan : la clé n'existe pas encore, et le développement ne
- * doit pas l'attendre. Sans {@code TURNSTILE_SECRET}, {@link #verify} répond « accepté » sans
- * appeler personne — et le front, symétriquement, n'affiche pas le widget.</p>
- *
- * <p><strong>Ce que ça n'affaiblit pas</strong> : le champ leurre et la limitation de débit
- * restent actifs. Turnstile est un renfort ; il n'a jamais été la protection.</p>
- *
- * <p>Le secret ne sort jamais d'ici : il part dans le corps d'un {@code POST} vers Cloudflare, et
- * aucun journal de cette classe ne l'imprime.</p>
- */
 @Service
 public class TurnstileVerifier {
 
@@ -37,16 +24,10 @@ public class TurnstileVerifier {
 
     public TurnstileVerifier(ContactProperties properties, RestTemplate discordRestTemplate) {
         this.properties = properties;
-        // Le même client que pour l'API Discord : des délais courts vers un tiers, ce qui est
-        // exactement ce dont on a besoin ici. Il ne porte PAS le secret interne des services
-        // Schub — c'est la raison d'être de ce bean, et elle vaut pour Cloudflare comme pour
-        // Discord.
+        // Ce client ne porte pas X-Internal-Secret, contrairement aux clients Feign.
         this.restTemplate = discordRestTemplate;
     }
 
-    /**
-     * @return vrai si le jeton est valide, ou si le rempart est désactivé
-     */
     public boolean verify(String token, String remoteAddress) {
         if (!properties.turnstile().enabled()) {
             return true;
@@ -80,12 +61,7 @@ public class TurnstileVerifier {
             }
             return success;
         } catch (RestClientException failure) {
-            // Cloudflare injoignable : on LAISSE PASSER, et c'est un choix, pas un oubli.
-            //
-            // Refuser ferait dépendre le formulaire de contact de la disponibilité d'un tiers —
-            // une panne chez Cloudflare fermerait la seule voie de contact du site. Les deux
-            // autres couches tiennent pendant ce temps, et un incident de ce genre se lit dans
-            // les journaux.
+            // Fail-open voulu : une panne Cloudflare ne doit pas fermer le formulaire ; débit et leurre tiennent seuls.
             log.warn("Vérification Turnstile impossible ({}), le message est accepté sans elle",
                     failure.getMessage());
             return true;

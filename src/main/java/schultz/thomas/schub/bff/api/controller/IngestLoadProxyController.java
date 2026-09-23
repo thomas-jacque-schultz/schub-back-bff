@@ -9,10 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * La charge de la collecte Riot. {@code INGEST_VIEW} n'est portée que par OWNER : c'est une
- * donnée d'exploitation, pas une donnée de jeu.
- */
 @RestController
 @RequestMapping("/ingest")
 public class IngestLoadProxyController {

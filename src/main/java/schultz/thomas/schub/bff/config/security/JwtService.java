@@ -13,33 +13,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Émission et lecture du jeton de session.
- *
- * <p>Deux changements du 18-09, qui se tiennent l'un l'autre :</p>
- * <ul>
- *   <li><strong>le sujet est l'identifiant Discord</strong>, pas un nom d'utilisateur. C'est lui
- *       que le BFF repasse au cœur dans {@code X-Actor-Id}, donc c'est lui qui doit être
- *       l'identité portée par le jeton. Le pseudo n'est que de l'affichage et voyage à côté ;</li>
- *   <li><strong>le jeton porte les permissions</strong> et plus seulement des rôles. C'est ce qui
- *       permet au BFF de refuser une route sans interroger le cœur à chaque requête.</li>
- * </ul>
- *
- * <p>Durée : 15 minutes (décision n°3). Retirer un droit prend donc effet en un quart d'heure au
- * pire — la contrepartie assumée d'un jeton qui porte ses permissions.</p>
- */
 @Service
 public class JwtService {
 
     static final String CLAIM_ROLES = "roles";
-    /**
-     * L'<strong>id interne</strong> du compte dans le cœur, à ne pas confondre avec le sujet du
-     * jeton, qui est l'identifiant Discord.
-     *
-     * <p>Les deux sont nécessaires et ne sont pas interchangeables : le sujet part au cœur dans
-     * {@code X-Actor-Id}, tandis que l'id interne est la clé de l'appelant dans les collections du
-     * cœur. C'est le sien, donc {@code /auth/me} peut le rendre sans rien apprendre sur autrui.</p>
-     */
     static final String CLAIM_USER_ID = "userId";
     static final String CLAIM_PERMISSIONS = "permissions";
     static final String CLAIM_USERNAME = "username";
@@ -50,15 +27,6 @@ public class JwtService {
         this.jwtProperties = jwtProperties;
     }
 
-    /**
-     * @param actorId     identifiant Discord — le sujet du jeton, et l'acteur transmis au cœur
-     * @param userId      id interne du compte dans le cœur, à ne pas confondre avec l'identifiant
-     *                    Discord
-     * @param username    pseudo, pour l'affichage seul
-     * @param roles       conservés pour ce qui raisonne encore en rôles ; les décisions
-     *                    d'autorisation, elles, se prennent sur les permissions
-     * @param permissions ce que ce compte a le droit de faire, au moment de l'émission
-     */
     public String generateToken(String actorId, String userId, String username,
                                 Collection<String> roles, Collection<String> permissions) {
         Instant now = Instant.now();
@@ -86,7 +54,6 @@ public class JwtService {
         return claims(token).getSubject();
     }
 
-    /** L'id interne du compte, ou {@code null} pour un jeton émis avant ce claim. */
     public String extractUserId(String token) {
         Object value = claims(token).get(CLAIM_USER_ID);
         return value == null ? null : String.valueOf(value);
@@ -104,17 +71,6 @@ public class JwtService {
         return stringList(claims(token).get(CLAIM_PERMISSIONS));
     }
 
-    /**
-     * Le jeton a-t-il passé la moitié de sa vie ?
-     *
-     * <p>C'est le déclencheur de la réémission glissante : l'utilisateur actif ne se reconnecte
-     * jamais, et ses droits se rafraîchissent au plus tard toutes les 7 min 30. Pas de refresh
-     * token — il faudrait le stocker, le faire tourner et le révoquer, donc redonner un état au
-     * BFF, qui est sans état depuis la phase 4 (décision n°3).</p>
-     *
-     * <p>Assumé : un utilisateur inactif est déconnecté au bout de 15 minutes. Si c'est pénible,
-     * la réponse est d'allonger la durée, pas d'ajouter un refresh token.</p>
-     */
     public boolean shouldRenew(String token) {
         Claims claims = claims(token);
         if (claims.getExpiration().getTime() <= System.currentTimeMillis()) {

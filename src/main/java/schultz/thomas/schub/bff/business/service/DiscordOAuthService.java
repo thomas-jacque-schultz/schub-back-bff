@@ -21,27 +21,9 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
 
-/**
- * Le seul endroit du système qui parle à Discord pour authentifier quelqu'un.
- *
- * <p>Deux raisons pour que ce soit le BFF et pas le cœur : le cœur ne connaît pas l'API Discord
- * et ne doit pas l'apprendre (plan §1), et le connecteur Discord est un traducteur de plateforme
- * — salons, messages, guildes — pas un fournisseur d'identité. Le BFF échange le code, lit le
- * profil, et passe le résultat au cœur qui décide qui est cette personne.</p>
- *
- * <p><strong>Le scope est figé à {@code identify}</strong>, ici, en dur. Pas {@code email}, pas
- * {@code guilds} : on ne demande pas ce dont on n'a pas besoin, et ce n'est pas un réglage
- * d'exploitation.</p>
- *
- * <p><strong>Le secret ne sort jamais d'ici.</strong> Il part dans le corps d'une requête
- * {@code POST} vers Discord et nulle part ailleurs : aucune exception levée par cette classe ne
- * le contient, aucun journal ne l'imprime, et le code d'autorisation comme le jeton d'accès
- * Discord sont traités de la même façon.</p>
- */
 @Service
 public class DiscordOAuthService {
 
-    /** Le seul scope demandé. En dur : voir la Javadoc de la classe. */
     public static final String SCOPE = "identify";
 
     private static final Logger log = LoggerFactory.getLogger(DiscordOAuthService.class);
@@ -56,19 +38,12 @@ public class DiscordOAuthService {
         this.restTemplate = discordRestTemplate;
     }
 
-    /** Une valeur aléatoire à 256 bits, sûre pour un {@code state} comme pour un vérifieur PKCE. */
     public String randomUrlSafeValue() {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         return URL_ENCODER.encodeToString(bytes);
     }
 
-    /**
-     * L'URL vers laquelle rediriger le navigateur.
-     *
-     * <p>{@code prompt=none} n'est pas utilisé : réafficher l'écran d'autorisation au moins une
-     * fois est ce qui rend le consentement visible.</p>
-     */
     public String authorizationUrl(String state, String codeVerifier) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(properties.authorizationUri())
                 .queryParam("client_id", properties.clientId())
@@ -83,25 +58,16 @@ public class DiscordOAuthService {
         return builder.encode().toUriString();
     }
 
-    /** {@code BASE64URL(SHA-256(verifier))} — le S256 de la RFC 7636. */
     public String codeChallenge(String codeVerifier) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(codeVerifier.getBytes(StandardCharsets.US_ASCII));
             return URL_ENCODER.encodeToString(digest);
         } catch (NoSuchAlgorithmException ex) {
-            // SHA-256 est obligatoire dans toute JVM : si on passe ici, l'environnement est cassé.
             throw new IllegalStateException("SHA-256 indisponible", ex);
         }
     }
 
-    /**
-     * Échange le code contre un jeton d'accès Discord, puis lit le profil.
-     *
-     * @throws DiscordOAuthException si Discord refuse le code, ou si l'API est injoignable. Le
-     *         message est volontairement pauvre : il finit dans une réponse HTTP, et un message
-     *         d'erreur bavard sur un échange OAuth est une source de fuite.
-     */
     public DiscordProfile exchangeCodeForProfile(String code, String codeVerifier) {
         String accessToken = exchangeCode(code, codeVerifier);
         return fetchProfile(accessToken);
@@ -131,8 +97,7 @@ public class DiscordOAuthService {
             }
             return String.valueOf(token);
         } catch (RestClientResponseException ex) {
-            // Le statut, et rien d'autre : le corps d'une erreur OAuth peut reprendre les
-            // paramètres envoyés, secret compris selon le fournisseur.
+            // Le statut seul : le corps d'une erreur OAuth peut reprendre le secret client.
             log.warn("Échange du code refusé par Discord — statut {}", ex.getStatusCode().value());
             throw new DiscordOAuthException("Le code d'autorisation a été refusé");
         } catch (RestClientException ex) {
@@ -162,10 +127,6 @@ public class DiscordOAuthService {
         }
     }
 
-    /**
-     * {@code global_name} d'abord : c'est le nom que Discord affiche depuis la fin des
-     * discriminateurs. {@code username} reste le repli pour les comptes qui n'en ont pas.
-     */
     private String displayName(Map<?, ?> body) {
         Object global = body.get("global_name");
         if (global != null && !String.valueOf(global).isBlank()) {
@@ -175,7 +136,6 @@ public class DiscordOAuthService {
         return username == null ? null : String.valueOf(username);
     }
 
-    /** Un compte sans avatar renvoie {@code null} : le front affichera son propre substitut. */
     private String avatarUrl(String userId, Object avatarHash) {
         if (avatarHash == null || String.valueOf(avatarHash).isBlank()) {
             return null;
@@ -183,11 +143,9 @@ public class DiscordOAuthService {
         return "https://cdn.discordapp.com/avatars/" + userId + "/" + avatarHash + ".png";
     }
 
-    /** Ce que le BFF retient de Discord : trois champs, et c'est tout ce que le scope permet. */
     public record DiscordProfile(String discordId, String username, String avatarUrl) {
     }
 
-    /** Échec du flux OAuth côté fournisseur. Ne porte jamais de secret dans son message. */
     public static class DiscordOAuthException extends RuntimeException {
         public DiscordOAuthException(String message) {
             super(message);

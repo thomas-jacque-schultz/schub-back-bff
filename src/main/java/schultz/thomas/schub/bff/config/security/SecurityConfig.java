@@ -29,19 +29,6 @@ import schultz.thomas.schub.bff.config.ContactProperties;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * La chaîne de sécurité du BFF.
- *
- * <p>{@code anyRequest().authenticated()} reste le filet, mais il n'est plus le seul contrôle :
- * chaque route porte désormais sa permission en {@code @PreAuthorize} — c'est ce que
- * {@code @EnableMethodSecurity} rend possible, et c'est le préalable absolu à l'ouverture de la
- * connexion Discord (plan §A.0). Trois chemins restent publics et le sont explicitement :
- * {@code /auth/**}, la sonde de santé et le statut public des serveurs.</p>
- *
- * <p>Le compte par mot de passe et son {@code InMemoryUserDetailsManager} sont conservés : leur
- * retrait est le dernier lot du chantier (A.6), dans une PR à part, après qu'une connexion
- * Discord a fonctionné en prod.</p>
- */
 @Configuration
 @EnableMethodSecurity
 @EnableConfigurationProperties({JwtProperties.class, AuthAdminProperties.class, DiscordOAuthProperties.class,
@@ -63,11 +50,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // CSRF désactivé, et c'est ce que `SameSite=Lax` sur le cookie de session rend
-                // tenable : toutes les écritures sont POST/PUT/DELETE, et `Lax` ne joint pas le
-                // cookie à une écriture initiée par un autre site. Le jour où une écriture passe
-                // en GET, cette ligne devient une faille — c'est le seul invariant à tenir
-                // (plan §A.3).
+                // CSRF désactivé, tenable grâce au cookie SameSite=Lax tant qu'aucune écriture ne passe en GET.
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -75,16 +58,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/game-servers/public-status").permitAll()
-                        // Le formulaire de contact du portfolio : PUBLIC, et en écriture.
-                        //
-                        // C'est la seule route du BFF dans ce cas, et elle n'a pas d'alternative —
-                        // un formulaire de contact derrière une authentification ne sert à rien.
-                        // Sans cette ligne elle répondrait 401 à tout le monde, `anyRequest()`
-                        // étant `authenticated()`.
-                        //
-                        // Ce qui la protège est ailleurs, dans ContactService : limitation de
-                        // débit par IP, champ leurre, et Turnstile si un secret est fourni.
-                        // AUCUNE de ces trois couches ne se retire sans en ajouter une autre.
+                        // Seule route publique en écriture. Protégée dans ContactService (débit par IP, leurre, Turnstile) :
+                        // ne retirer aucune couche sans la remplacer.
                         .requestMatchers(HttpMethod.POST, "/contact").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -102,9 +77,6 @@ public class SecurityConfig {
                 .toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        // Sans cette ligne, le navigateur reçoit le jeton renouvelé et le cache au front : un
-        // en-tête de réponse non exposé est illisible en JavaScript, et la réémission glissante
-        // serait invisible. Disparaîtra au lot A.3, quand le jeton passera en cookie httpOnly.
         configuration.setExposedHeaders(List.of(JwtAuthenticationFilter.RENEWED_TOKEN_HEADER));
         configuration.setAllowCredentials(true);
 

@@ -20,45 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Authentifie la requête depuis le jeton, et le renouvelle quand il a passé la moitié de sa vie.
- *
- * <p><strong>Deux transports, le temps d'une transition.</strong> Le jeton vit désormais dans un
- * cookie {@code httpOnly} (décision n°4), mais le front actuel envoie encore
- * {@code Authorization: Bearer}. Les deux sont acceptés, et l'en-tête l'emporte quand les deux
- * sont là — c'est le front non migré qui parle, il doit continuer de fonctionner tel quel. Le
- * retrait du {@code Bearer} est une étape ultérieure, après la migration de {@code httpClient.ts}
- * et des six {@code *Api.ts}.</p>
- *
- * <p><strong>La réémission relit les permissions dans le cœur</strong>, elle ne recopie pas
- * celles du jeton en cours. C'est tout l'intérêt : renouveler à l'identique rendrait la session
- * d'un utilisateur actif éternelle <em>et</em> ses droits figés, ce qui viderait de son sens la
- * durée de 15 minutes — un droit retiré ne prendrait jamais effet (décision n°3).</p>
- *
- * <p><strong>Le jeton renouvelé repart par le canal dont il est venu</strong> : {@code Set-Cookie}
- * pour un jeton arrivé en cookie, en-tête {@code X-Auth-Token} pour un jeton arrivé en
- * {@code Bearer}. Reposer un cookie à un front qui lit un en-tête, ou l'inverse, donnerait une
- * session qui expire malgré une réémission qui a bien eu lieu — une panne sans symptôme jusqu'à
- * la déconnexion.</p>
- *
- * <p>Si le cœur est injoignable au moment du renouvellement, on ne renouvelle pas et la requête
- * suit son cours : déconnecter quelqu'un parce qu'un service amont hoquette serait une punition
- * sans rapport avec la faute.</p>
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    /** Le canal de réémission du front non migré. Disparaîtra avec le {@code Bearer}. */
     public static final String RENEWED_TOKEN_HEADER = "X-Auth-Token";
 
-    /**
-     * Le jeton validé, déposé sur la requête pour {@code /auth/me}.
-     *
-     * <p>Sans cet attribut, le contrôleur devrait refaire la lecture des deux transports — et
-     * c'est exactement le genre de duplication qui finit par diverger : {@code /auth/me}
-     * continuerait de n'accepter que l'en-tête, donc répondrait 401 à une session en cookie
-     * alors que toutes les autres routes l'acceptent.</p>
-     */
     public static final String TOKEN_ATTRIBUTE = "schub.jwt";
 
     private static final String BEARER_PREFIX = "Bearer ";
@@ -99,16 +65,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 renewIfNeeded(actorId, token, response);
             }
         } catch (JwtException ignored) {
-            // Jeton illisible, expiré ou mal signé : la requête continue sans identité et se
-            // fera refuser par la chaîne de sécurité. Pas de 401 ici — ce filtre authentifie,
-            // il n'autorise pas.
             SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
     }
 
-    /** L'en-tête d'abord — c'est le front non migré, et lui seul en envoie un. */
     private Optional<PresentedToken> readToken(HttpServletRequest request) {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
@@ -119,11 +81,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .map(value -> new PresentedToken(value, Transport.COOKIE));
     }
 
-    /**
-     * Le principal est l'identifiant Discord : c'est lui que l'intercepteur Feign repasse au cœur
-     * dans {@code X-Actor-Id}. Les autorités sont les permissions <em>et</em> les rôles, pour que
-     * {@code hasAuthority('PORT_RULE_EDIT')} et {@code hasRole('ADMIN')} fonctionnent tous deux.
-     */
     private void authenticate(String actorId, String token) {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         jwtService.extractPermissions(token).forEach(p -> authorities.add(new SimpleGrantedAuthority(p)));

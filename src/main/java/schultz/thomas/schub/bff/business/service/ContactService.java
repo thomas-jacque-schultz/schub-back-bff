@@ -11,39 +11,11 @@ import schultz.thomas.schub.bff.data.client.ConnectorDiscordFeignClient;
 
 import java.util.regex.Pattern;
 
-/**
- * Le formulaire de contact, côté serveur.
- *
- * <p>C'est <strong>la seule route publique du système qui déclenche une écriture</strong>, et
- * tout ce qui suit découle de cette phrase. Sans protection, le premier robot qui la trouve
- * transforme une messagerie Discord en boîte à spam — et on ne se désabonne pas d'un bot.</p>
- *
- * <h2>Les trois couches, dans l'ordre où elles s'appliquent</h2>
- * <ol>
- *   <li><strong>La limitation de débit</strong>, d'abord, parce qu'elle est la moins chère à
- *       évaluer et la seule qui ne se contourne pas. Elle est appliquée <em>avant</em> la
- *       validation : valider d'abord reviendrait à offrir un service de vérification gratuit à
- *       qui cherche la forme acceptée.</li>
- *   <li><strong>Le champ leurre</strong>, qui attrape le trafic automatisé aveugle sans rien
- *       demander au visiteur.</li>
- *   <li><strong>Turnstile</strong>, si et seulement si un secret est configuré.</li>
- * </ol>
- *
- * <p>Les trois refusent de la même façon vue de l'extérieur — un 400 sans détail. Dire à un
- * robot <em>laquelle</em> l'a arrêté, c'est lui dire quoi corriger.</p>
- */
 @Service
 public class ContactService {
 
     private static final Logger log = LoggerFactory.getLogger(ContactService.class);
 
-    /**
-     * Une vérification de forme, pas une validation d'adresse.
-     *
-     * <p>Seule une réponse au message prouve qu'une adresse existe. Ce motif écarte les saisies
-     * manifestement fautives ; prétendre faire mieux avec une expression régulière est une
-     * illusion classique, qui finit par rejeter des adresses valides.</p>
-     */
     private static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
     private static final int MIN_MESSAGE_LENGTH = 20;
@@ -64,7 +36,6 @@ public class ContactService {
         this.connectorDiscord = connectorDiscord;
     }
 
-    /** Les issues possibles, telles que le contrôleur doit les traduire en codes HTTP. */
     public enum Outcome {
         DELIVERED,
         REJECTED,
@@ -81,8 +52,6 @@ public class ContactService {
             return Outcome.REJECTED;
         }
 
-        // Le leurre. Un champ que personne ne voit et que les robots remplissent : s'il porte
-        // quoi que ce soit, la requête ne vient pas d'un navigateur piloté par un humain.
         if (request.website() != null && !request.website().isBlank()) {
             log.info("Formulaire de contact refusé : champ leurre rempli ({})", remoteAddress);
             return Outcome.REJECTED;
@@ -97,8 +66,6 @@ public class ContactService {
         }
 
         if (!properties.hasRecipient()) {
-            // Mal configuré, et il faut le dire franchement plutôt que d'annoncer au visiteur un
-            // envoi qui n'a eu lieu nulle part. C'est DISCORD_ADMIN_ID qui manque.
             log.error("Formulaire de contact inutilisable : aucun destinataire configuré (contact.recipient-id)");
             return Outcome.UNAVAILABLE;
         }
@@ -143,18 +110,13 @@ public class ContactService {
             }
 
             if (!"DIRECT_MESSAGE".equals(ack.via())) {
-                // Le message est arrivé, mais pas là où il devait. C'est le signal qu'il faut
-                // rouvrir les MP du compte destinataire : sans cette ligne, personne ne le
-                // saurait jamais, puisque le visiteur, lui, a bien reçu une confirmation.
                 log.warn("Message de contact remis par repli ({}) : les MP du destinataire sont probablement fermés",
                         ack.via());
             }
 
             return Outcome.DELIVERED;
         } catch (Exception failure) {
-            // On ne recopie jamais le message du visiteur ici : il contient son adresse, et les
-            // journaux d'un BFF ne sont pas un endroit où stocker des données personnelles. Le
-            // connecteur, lui, le journalise en dernier recours — c'est là que le filet est.
+            // Jamais le message du visiteur dans les journaux : il contient son adresse.
             log.error("Le connecteur Discord n'a pas répondu au message de contact : {}", failure.getMessage());
             return Outcome.UNAVAILABLE;
         }

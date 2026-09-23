@@ -14,18 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Les compositions d'une équipe — les brouillons du préparateur de draft.
- *
- * <p>Sous {@code /teams/{teamId}} comme dans le cœur : une composition n'existe pas sans son
- * équipe, et c'est l'équipe qui porte les droits. Un contrôleur séparé du proxy des équipes pour
- * la même raison que dans le cœur — deux ressources, deux contrôleurs — mais la politique est
- * identique et la justification est écrite une fois, dans {@link TeamProxyController}.</p>
- *
- * <p>{@code COMPOSITION_EDIT} n'apparaît donc pas ici : c'est une permission à portée d'équipe,
- * que le JWT ne peut pas porter pour un capitaine. Le cœur l'évalue avec l'équipe en ressource,
- * lui seul le peut.</p>
- */
 @RestController
 @RequestMapping("/teams/{teamId}/compositions")
 public class CompositionProxyController {

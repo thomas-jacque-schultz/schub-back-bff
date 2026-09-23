@@ -25,27 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * La connexion Discord — lot A.3.
- *
- * <pre>
- *   GET /auth/discord           → 302 vers Discord (scope `identify` seul)
- *   GET /auth/discord/callback  → échange du code, /users/@me, appel au cœur, cookie, 302 vers /
- * </pre>
- *
- * <p><strong>Le BFF reste sans état.</strong> Il ne lit pas Mongo et ne décide de rien sur
- * l'identité : il demande au cœur qui est ce compte Discord, et le cœur le crée au rôle
- * {@code VISITEUR} s'il est inconnu (décision n°2). Le cœur garde la propriété de l'identité.</p>
- *
- * <p><strong>Où vit le {@code state}</strong> : dans un cookie {@code httpOnly} de dix minutes,
- * faute de session serveur où le déposer — voir {@link AuthCookies}. Le vérifieur PKCE
- * l'accompagne dans un second cookie de même durée. Les deux sont effacés dès l'entrée dans le
- * callback, avant même d'être validés : ils sont à usage unique, et un {@code state} qui traîne
- * derrière un échec peut être rejoué.</p>
- *
- * <p>Ce contrôleur est volontairement séparé de {@link AuthController}, qui porte le compte par
- * mot de passe : celui-ci se supprimera d'un bloc au lot A.6, sans toucher à celui-là.</p>
- */
 @RestController
 @RequestMapping("/auth/discord")
 public class DiscordAuthController {
@@ -73,15 +52,9 @@ public class DiscordAuthController {
         this.cookies = cookies;
     }
 
-    /**
-     * Démarre le flux. Le front n'a qu'à envoyer le navigateur ici — il n'orchestre rien, et
-     * c'est précisément ce que le cookie permet.
-     */
     @GetMapping
     public ResponseEntity<?> start() {
         if (!properties.configured()) {
-            // 503 et pas 500 : ce n'est pas un bug, c'est un déploiement incomplet. Le message
-            // nomme les variables manquantes sans jamais citer leur valeur.
             log.error("Connexion Discord non configurée — DISCORD_OAUTH_CLIENT_ID, "
                     + "DISCORD_OAUTH_CLIENT_SECRET et DISCORD_OAUTH_REDIRECT_URI sont requis");
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
@@ -98,14 +71,6 @@ public class DiscordAuthController {
                 .build();
     }
 
-    /**
-     * Le retour de Discord.
-     *
-     * <p>Les codes de réponse sont volontairement francs plutôt qu'enrobés dans une redirection :
-     * un {@code state} qui ne correspond pas est une tentative, pas un incident d'usage, et une
-     * panne du cœur doit se voir. Seul le refus explicite de l'utilisateur devant l'écran
-     * d'autorisation renvoie au site, puisque c'est un choix et non une erreur.</p>
-     */
     @GetMapping("/callback")
     public ResponseEntity<?> callback(HttpServletRequest request,
                                       @RequestParam(required = false) String code,
@@ -116,16 +81,11 @@ public class DiscordAuthController {
         String[] cleared = cookies.clearedOauthStep();
 
         if (error != null && !error.isBlank()) {
-            // « access_denied » veut dire que la personne a cliqué sur Annuler. On la ramène chez
-            // elle, sans jeton. Le paramètre est repris tel quel de Discord, donc jamais réinjecté
-            // dans l'URL de retour : il finirait dans les journaux du proxy.
             log.info("Autorisation Discord non accordée");
             return redirectHome(cleared).build();
         }
 
         if (expectedState.isEmpty() || state == null || !constantTimeEquals(expectedState.get(), state)) {
-            // Sans cette vérification, n'importe qui peut faire aboutir un callback dans le
-            // navigateur d'un tiers et l'asseoir dans une session qui n'est pas la sienne.
             log.warn("Callback OAuth refusé : state absent ou non concordant");
             return withCleared(ResponseEntity.status(HttpStatus.BAD_REQUEST), cleared)
                     .body(Map.of("error", "Requête de connexion invalide"));
@@ -144,10 +104,6 @@ public class DiscordAuthController {
                     .body(Map.of("error", ex.getMessage()));
         }
 
-        // Le cœur crée le compte au rôle VISITEUR s'il est inconnu, et rafraîchit pseudo et
-        // avatar au passage. S'il est injoignable, on échoue franchement : émettre un jeton sans
-        // permission produirait une session connectée refusée partout, plus dure à diagnostiquer
-        // qu'un refus net.
         Optional<UserIdentityDto> identity =
                 identityService.identity(profile.discordId(), profile.username(), profile.avatarUrl());
         if (identity.isEmpty()) {
@@ -182,13 +138,6 @@ public class DiscordAuthController {
         return builder;
     }
 
-    /**
-     * Comparaison sans fuite de temps.
-     *
-     * <p>Le gain est théorique sur un {@code state} à usage unique et de courte vie, mais une
-     * comparaison de secret en temps variable est le genre de détail qu'on copie ensuite ailleurs
-     * sans y repenser.</p>
-     */
     private boolean constantTimeEquals(String expected, String actual) {
         return MessageDigest.isEqual(
                 expected.getBytes(StandardCharsets.UTF_8), actual.getBytes(StandardCharsets.UTF_8));
