@@ -5,6 +5,7 @@ import schultz.thomas.schub.bff.data.client.CoreFeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -43,5 +44,21 @@ public class MeProxyController {
                                         @RequestParam(required = false) Integer patches,
                                         @RequestParam(required = false) Integer champions) {
         return gateway.call(UPSTREAM, () -> core.getMyStats(days, patches, champions));
+    }
+
+    @GetMapping("/stats/games")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> games(@RequestParam(required = false) Integer days,
+                                        @RequestParam(required = false) Integer patches,
+                                        @RequestParam(required = false) Integer limit) {
+        return gateway.call(UPSTREAM, () -> core.getMyGames(days, patches, limit));
+    }
+
+    @GetMapping("/stats/games/{matchId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> game(@PathVariable String matchId,
+                                       @RequestParam(required = false) Integer days,
+                                       @RequestParam(required = false) Integer patches) {
+        return gateway.call(UPSTREAM, () -> core.getMyGameDetail(matchId, days, patches));
     }
 }

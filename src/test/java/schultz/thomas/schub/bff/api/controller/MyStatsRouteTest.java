@@ -23,8 +23,9 @@ class MyStatsRouteTest {
                 .allSatisfy(chemin -> assertThat(chemin.replace("{teamId}", "").replace("{matchId}", ""))
                         .as("une route de statistiques ne désigne que l'équipe ou l'une de ses parties, jamais un joueur")
                         .doesNotContain("{"));
+        // {matchId} : le cœur ne le cherche que parmi les parties du joueur connecté.
         assertThat(cheminsDeLecture(MeProxyController.class))
-                .noneMatch(chemin -> chemin.contains("{"));
+                .noneMatch(chemin -> chemin.replace("{matchId}", "").contains("{"));
     }
 
     @Test

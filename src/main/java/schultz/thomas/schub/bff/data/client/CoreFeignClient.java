@@ -192,6 +192,16 @@ public interface CoreFeignClient {
                                @RequestParam(value = "patches", required = false) Integer patches,
                                @RequestParam(value = "champions", required = false) Integer champions);
 
+    @GetMapping("/me/stats/games")
+    byte[] getMyGames(@RequestParam(value = "days", required = false) Integer days,
+                      @RequestParam(value = "patches", required = false) Integer patches,
+                      @RequestParam(value = "limit", required = false) Integer limit);
+
+    @GetMapping("/me/stats/games/{matchId}")
+    byte[] getMyGameDetail(@PathVariable("matchId") String matchId,
+                           @RequestParam(value = "days", required = false) Integer days,
+                           @RequestParam(value = "patches", required = false) Integer patches);
+
     @GetMapping("/teams/{teamId}/stats/team")
     byte[] getTeamGamesStats(@PathVariable("teamId") String teamId,
                              @RequestParam(value = "days", required = false) Integer days,
@@ -200,7 +210,9 @@ public interface CoreFeignClient {
 
     @GetMapping("/teams/{teamId}/stats/games/{matchId}")
     byte[] getTeamGameDetail(@PathVariable("teamId") String teamId,
-                             @PathVariable("matchId") String matchId);
+                             @PathVariable("matchId") String matchId,
+                             @RequestParam(value = "days", required = false) Integer days,
+                             @RequestParam(value = "patches", required = false) Integer patches);
 
     @GetMapping("/teams/{teamId}/stats/refresh")
     byte[] getTeamStatsRefresh(@PathVariable("teamId") String teamId);
