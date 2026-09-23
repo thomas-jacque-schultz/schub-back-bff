@@ -189,11 +189,13 @@ public interface CoreFeignClient {
     @GetMapping("/teams/{teamId}/stats/players")
     byte[] getTeamPlayersStats(@PathVariable("teamId") String teamId,
                                @RequestParam(value = "days", required = false) Integer days,
+                               @RequestParam(value = "patches", required = false) Integer patches,
                                @RequestParam(value = "champions", required = false) Integer champions);
 
     @GetMapping("/teams/{teamId}/stats/team")
     byte[] getTeamGamesStats(@PathVariable("teamId") String teamId,
                              @RequestParam(value = "days", required = false) Integer days,
+                             @RequestParam(value = "patches", required = false) Integer patches,
                              @RequestParam(value = "limit", required = false) Integer limit);
 
     @GetMapping("/teams/{teamId}/stats/games/{matchId}")
@@ -208,9 +210,17 @@ public interface CoreFeignClient {
 
     @GetMapping("/teams/{teamId}/stats/opposition")
     byte[] getTeamOpposition(@PathVariable("teamId") String teamId,
-                             @RequestParam(value = "days", required = false) Integer days);
+                             @RequestParam(value = "days", required = false) Integer days,
+                             @RequestParam(value = "patches", required = false) Integer patches);
 
     @GetMapping("/me/stats")
     byte[] getMyStats(@RequestParam(value = "days", required = false) Integer days,
+                      @RequestParam(value = "patches", required = false) Integer patches,
                       @RequestParam(value = "champions", required = false) Integer champions);
+
+    @GetMapping("/lol/references/{position}")
+    byte[] getReferenceGrid(@PathVariable("position") String position,
+                            @RequestParam(value = "scope", required = false) String scope,
+                            @RequestParam(value = "tier", required = false) String tier,
+                            @RequestParam(value = "patch", required = false) String patch);
 }

@@ -116,16 +116,18 @@ public class TeamProxyController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> playersStats(@PathVariable String teamId,
                                                @RequestParam(required = false) Integer days,
+                                               @RequestParam(required = false) Integer patches,
                                                @RequestParam(required = false) Integer champions) {
-        return gateway.call(UPSTREAM, () -> core.getTeamPlayersStats(teamId, days, champions));
+        return gateway.call(UPSTREAM, () -> core.getTeamPlayersStats(teamId, days, patches, champions));
     }
 
     @GetMapping("/{teamId}/stats/team")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> teamStats(@PathVariable String teamId,
                                             @RequestParam(required = false) Integer days,
+                                            @RequestParam(required = false) Integer patches,
                                             @RequestParam(required = false) Integer limit) {
-        return gateway.call(UPSTREAM, () -> core.getTeamGamesStats(teamId, days, limit));
+        return gateway.call(UPSTREAM, () -> core.getTeamGamesStats(teamId, days, patches, limit));
     }
 
     @GetMapping("/{teamId}/stats/games/{matchId}")
@@ -149,8 +151,9 @@ public class TeamProxyController {
     @GetMapping("/{teamId}/stats/opposition")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> opposition(@PathVariable String teamId,
-                                             @RequestParam(required = false) Integer days) {
-        return gateway.call(UPSTREAM, () -> core.getTeamOpposition(teamId, days));
+                                             @RequestParam(required = false) Integer days,
+                                             @RequestParam(required = false) Integer patches) {
+        return gateway.call(UPSTREAM, () -> core.getTeamOpposition(teamId, days, patches));
     }
 
     @GetMapping("/{teamId}/games/{matchId}/reviews")

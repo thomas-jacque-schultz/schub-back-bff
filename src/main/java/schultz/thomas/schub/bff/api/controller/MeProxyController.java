@@ -40,7 +40,8 @@ public class MeProxyController {
     @GetMapping("/stats")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> stats(@RequestParam(required = false) Integer days,
+                                        @RequestParam(required = false) Integer patches,
                                         @RequestParam(required = false) Integer champions) {
-        return gateway.call(UPSTREAM, () -> core.getMyStats(days, champions));
+        return gateway.call(UPSTREAM, () -> core.getMyStats(days, patches, champions));
     }
 }
