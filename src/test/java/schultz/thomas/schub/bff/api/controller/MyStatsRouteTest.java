@@ -19,8 +19,9 @@ class MyStatsRouteTest {
     void aucuneRouteCiblee() {
         assertThat(cheminsDeLecture(CoreFeignClient.class))
                 .filteredOn(chemin -> chemin.contains("stats"))
-                .allSatisfy(chemin -> assertThat(chemin.replace("{teamId}", ""))
-                        .as("une route de statistiques ne désigne que l'équipe, jamais un joueur")
+                // {matchId} : le cœur ne le cherche que parmi les parties d'équipe de {teamId}.
+                .allSatisfy(chemin -> assertThat(chemin.replace("{teamId}", "").replace("{matchId}", ""))
+                        .as("une route de statistiques ne désigne que l'équipe ou l'une de ses parties, jamais un joueur")
                         .doesNotContain("{"));
         assertThat(cheminsDeLecture(MeProxyController.class))
                 .noneMatch(chemin -> chemin.contains("{"));

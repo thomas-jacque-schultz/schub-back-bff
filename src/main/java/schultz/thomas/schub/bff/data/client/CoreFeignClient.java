@@ -190,6 +190,14 @@ public interface CoreFeignClient {
                              @RequestParam(value = "days", required = false) Integer days,
                              @RequestParam(value = "limit", required = false) Integer limit);
 
+    @GetMapping("/teams/{teamId}/stats/games/{matchId}")
+    byte[] getTeamGameDetail(@PathVariable("teamId") String teamId,
+                             @PathVariable("matchId") String matchId);
+
+    @GetMapping("/teams/{teamId}/stats/opposition")
+    byte[] getTeamOpposition(@PathVariable("teamId") String teamId,
+                             @RequestParam(value = "days", required = false) Integer days);
+
     @GetMapping("/me/stats")
     byte[] getMyStats(@RequestParam(value = "days", required = false) Integer days,
                       @RequestParam(value = "champions", required = false) Integer champions);
