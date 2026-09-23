@@ -30,7 +30,7 @@ class MyStatsRouteTest {
     @Test
     @DisplayName("La route de mes stats ne prend aucun paramètre de chemin")
     void aucuneCiblePossible() throws NoSuchMethodException {
-        Method route = MeProxyController.class.getMethod("stats", Integer.class, Integer.class);
+        Method route = MeProxyController.class.getMethod("stats", Integer.class, Integer.class, Integer.class);
 
         assertThat(Arrays.stream(route.getParameters())
                 .anyMatch(parametre -> parametre.isAnnotationPresent(PathVariable.class)))
