@@ -8,16 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Catalogue des déploiements, pour lier un GameServer à la stack qui le réalise.
- *
- * <p>Ce chemin s'appelait {@code /portainer/stacks}. Une marque d'outil n'a rien à faire dans
- * l'API du BFF : le jour où Portainer est remplacé, le front n'a pas à bouger. Le cœur expose
- * {@code /deployments}, le BFF aussi.</p>
- *
- * <p>Derrière {@code SERVER_INFRA_VIEW} : cette liste est l'inventaire des stacks de la machine,
- * y compris celles qui n'ont rien à voir avec un jeu.</p>
- */
 @RestController
 @RequestMapping("/deployments")
 public class DeploymentProxyController {

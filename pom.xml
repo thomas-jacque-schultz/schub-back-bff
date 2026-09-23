@@ -6,7 +6,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.1.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <relativePath/>
     </parent>
     <groupId>schultz.thomas</groupId>
     <artifactId>schub.bff</artifactId>
@@ -16,12 +16,7 @@
     <properties>
         <java.version>21</java.version>
         <spring-cloud.version>2022.0.5</spring-cloud.version>
-        <!--
-          Le plan gratuit de SonarCloud interdit de modifier le quality gate : « Sonar way »
-          impose 80 % de couverture sur le code neuf et n'est pas négociable. Exclure tout de
-          la mesure rend la métrique non applicable, donc la condition est ignorée. Même choix
-          que schub-connector-discord. À retirer le jour où ce repo aura des tests.
-        -->
+        <!-- Plan gratuit SonarCloud : quality gate non modifiable (80 % de couverture) ; exclure rend la condition inapplicable. -->
         <sonar.coverage.exclusions>**/*</sonar.coverage.exclusions>
     </properties>
 
@@ -51,7 +46,6 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
-        <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -115,12 +109,7 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!--
-              Sans cette déclaration, Maven ne sait pas résoudre le préfixe `sonar:` :
-              il ne le cherche que dans les groupes de plugins par défaut, auxquels
-              org.sonarsource.scanner.maven n'appartient pas. Le workflow échouait sur
-              « No plugin found for prefix 'sonar' ». Même version que les autres repos.
-            -->
+            <!-- Sans cette déclaration, Maven ne résout pas le préfixe sonar:. -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>

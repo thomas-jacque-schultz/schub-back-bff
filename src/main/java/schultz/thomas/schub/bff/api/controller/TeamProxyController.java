@@ -15,35 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Les équipes, servies au front. Tout part vers le cœur, qui porte le domaine depuis D.4.
- *
- * <h2>Où s'arrête le contrôle grossier, et pourquoi il s'arrête là</h2>
- *
- * <p>Le partage du plan §A.2 est net : contrôle grossier au BFF, fin dans le cœur. Encore
- * faut-il que le contrôle grossier soit <em>possible</em>. {@code TEAM_VIEW}, {@code TEAM_EDIT}
- * et {@code COMPOSITION_EDIT} sont des permissions <strong>à portée d'équipe</strong> : elles
- * sont accordées par l'appartenance à une équipe précise
- * ({@code TeamScopedAuthority} dans le cœur), pas par le rôle. Le JWT, lui, ne porte que les
- * permissions du rôle — il ne peut pas porter « membre de l'équipe 64f… ». Le BFF ne sait donc
- * pas, et ne peut pas savoir, qui est membre de quoi.</p>
- *
- * <p>Conséquence directe : exiger {@code TEAM_VIEW} à la porte refuserait à un capitaine l'accès
- * à sa propre équipe, puisque le rôle {@code VISITEUR} ne porte que {@code SERVER_VIEW} et
- * {@code TEAM_CREATE}. Le contrôle grossier s'arrête donc à « c'est un compte connecté », et le
- * contrôle fin est dans le cœur, seul à connaître les effectifs. C'est l'inverse des serveurs,
- * dont le pilotage vient du rôle et se refuse donc dès le BFF.</p>
- *
- * <p><strong>La seule route qui porte une permission est la création</strong>, et c'est le cas
- * symétrique : {@code TEAM_CREATE} est globale, sans ressource — le cœur l'évalue lui aussi sans
- * équipe ({@code permissionEvaluator.require(actor, TEAM_CREATE, null)}). Elle se vérifie donc
- * ici sans rien deviner, et elle évite un aller-retour au cœur pour un refus certain.</p>
- *
- * <p>Ce que le BFF apporte quand même sur les autres routes : l'acteur. {@code X-Actor-Id} est
- * posé par {@code InternalSecretFeignConfig} depuis le contexte de sécurité, et c'est le secret
- * interne qui rend cette affirmation croyable. Sans le BFF, le cœur n'aurait personne à qui
- * appliquer son contrôle fin.</p>
- */
+// Contrôle grossier limité à isAuthenticated() : TEAM_VIEW, TEAM_EDIT et COMPOSITION_EDIT sont à portée
+// d'équipe, le JWT ne les porte pas, le cœur tranche. Seule TEAM_CREATE (globale) se vérifie ici.
 @RestController
 @RequestMapping("/teams")
 public class TeamProxyController {
@@ -58,13 +31,6 @@ public class TeamProxyController {
         this.gateway = gateway;
     }
 
-    /**
-     * Les équipes de l'appelant.
-     *
-     * <p>Le cœur ne sert que les siennes — celles où il figure et celles qu'il a créées. Il n'y a
-     * donc rien à filtrer ici, et rien non plus à exiger : un compte sans équipe reçoit une liste
-     * vide, ce qui est une réponse, pas un refus.</p>
-     */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> mine() {
@@ -77,13 +43,6 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, HttpStatus.CREATED, () -> core.createTeam(gateway.parseBody(body)));
     }
 
-    /**
-     * Revendiquer les places qui attendaient son Riot ID.
-     *
-     * <p>Aucune permission : l'opération ne porte que sur l'appelant, et le cœur ne relie que ce
-     * qui désigne déjà son compte. Idempotente, elle rend les équipes qui viennent de basculer —
-     * donc une liste vide si rien n'attendait.</p>
-     */
     @PostMapping("/claim")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> claim() {
@@ -125,17 +84,12 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.updateTeamMember(teamId, memberId, gateway.parseBody(body)));
     }
 
-    /** Rend l'équipe mise à jour, pas 204 : c'est le contrat du cœur, on ne le réécrit pas. */
     @DeleteMapping("/{teamId}/members/{memberId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> removeMember(@PathVariable String teamId, @PathVariable String memberId) {
         return gateway.call(UPSTREAM, () -> core.removeTeamMember(teamId, memberId));
     }
 
-    /**
-     * Les trois lectures de panneau. {@code isAuthenticated()} et rien de plus : {@code TEAM_VIEW}
-     * est à portée d'équipe, le jeton ne la porte pas, et c'est le cœur qui tranche.
-     */
     @GetMapping("/{teamId}/champion-pool")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> championPool(@PathVariable String teamId,
@@ -143,13 +97,6 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.getChampionPool(teamId, masteryFloor));
     }
 
-    /**
-     * Choisir les champions d'un poste, et régler le plancher de maîtrise.
-     *
-     * <p>{@code isAuthenticated()} comme les lectures : l'écriture demande
-     * {@code COMPOSITION_EDIT} <em>sur cette équipe</em>, une permission de portée que le jeton
-     * ne porte pas. Le cœur tranche.</p>
-     */
     @PutMapping("/{teamId}/champion-pool/roles/{role}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> setPoolChampions(@PathVariable String teamId,
@@ -181,11 +128,6 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.getTeamGamesStats(teamId, days, limit));
     }
 
-    /**
-     * La revue d'après-match (D.10). {@code isAuthenticated()} comme les autres routes d'équipe :
-     * « qui a le droit d'écrire sur qui » dépend de l'appartenance à cette équipe et de la place
-     * du sujet, deux choses que le jeton ne porte pas et que le BFF ne peut pas deviner.
-     */
     @GetMapping("/{teamId}/games/{matchId}/reviews")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> gameReviews(@PathVariable String teamId,

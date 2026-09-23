@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Ce qui est réellement Discord — et c'est tout ce qui reste au connecteur côté front. */
 @RestController
 @RequestMapping("/discord")
 public class DiscordProxyController {
@@ -25,18 +24,12 @@ public class DiscordProxyController {
         this.gateway = gateway;
     }
 
-    /**
-     * La liste des salons du bot, derrière la même permission que l'abonnement : c'est la liste
-     * dans laquelle on choisit, elle n'a d'usage que pour qui a le droit de choisir — et elle
-     * révèle la composition des serveurs Discord où le bot est présent.
-     */
     @GetMapping("/guilds/channels")
     @PreAuthorize("hasAuthority('DISCORD_CHANNEL_MANAGE')")
     public ResponseEntity<byte[]> guildsChannels() {
         return gateway.call(UPSTREAM, discord::getGuildsChannels);
     }
 
-    /** Choix des salons notifiés. Rétabli en phase 4 : le front l'appelait dans le vide. */
     @PostMapping("/channels/subscribe")
     @PreAuthorize("hasAuthority('DISCORD_CHANNEL_MANAGE')")
     public ResponseEntity<byte[]> subscribeChannels(@RequestBody(required = false) byte[] body) {

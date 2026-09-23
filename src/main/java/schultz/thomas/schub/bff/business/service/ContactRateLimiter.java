@@ -12,41 +12,12 @@ import java.util.Deque;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * La limitation de débit du formulaire de contact — **la couche qui ne se contourne pas**.
- *
- * <p>Le champ leurre s'évite en lisant le HTML ; Turnstile s'évite en payant un service de
- * résolution. Celle-ci, non : elle compte ce qui arrive vraiment, et elle est du côté serveur.
- * C'est pour ça qu'elle est la seule des trois à n'avoir aucun interrupteur.</p>
- *
- * <h2>Deux compteurs, pas un</h2>
- *
- * <p>Par IP, parce que c'est ce qui arrête un robot isolé. Et globalement, parce qu'un botnet
- * change d'adresse à chaque requête et rendrait le premier compteur décoratif. Le plafond global
- * est haut : il n'existe pas pour filtrer, il existe pour qu'une attaque distribuée coûte une
- * journée de formulaire indisponible plutôt qu'une messagerie noyée.</p>
- *
- * <h2>Ce que cette implémentation ne fait pas, et pourquoi c'est acceptable</h2>
- *
- * <p>Le compte est <strong>en mémoire, donc par instance</strong>. Deux répliques du BFF
- * laisseraient passer le double. Le BFF tourne aujourd'hui en exemplaire unique, et le jour où ce
- * ne sera plus vrai, la bonne réponse sera un compteur partagé — pas de faire semblant ici. Le
- * plus important est ailleurs : <strong>Cloudflare est devant</strong>, et c'est lui qui absorbe
- * le volume. Ce limiteur est la dernière porte, pas la première.</p>
- */
 @Component
 public class ContactRateLimiter {
 
     private static final Logger log = LoggerFactory.getLogger(ContactRateLimiter.class);
     private static final Duration WINDOW = Duration.ofHours(1);
 
-    /**
-     * Au-delà, on vide la table des adresses inactives.
-     *
-     * <p>Sans ce plafond, une attaque distribuée ferait grossir la table jusqu'à épuiser la
-     * mémoire du service — le limiteur deviendrait lui-même le vecteur de la panne qu'il est
-     * censé prévenir.</p>
-     */
     private static final int MAX_TRACKED_ADDRESSES = 10_000;
 
     private final ContactProperties properties;
@@ -57,13 +28,7 @@ public class ContactRateLimiter {
         this.properties = properties;
     }
 
-    /**
-     * Enregistre une tentative et dit si elle est acceptée.
-     *
-     * <p>L'appel <strong>compte la tentative même quand il la refuse</strong> : sinon un robot
-     * qui insiste verrait sa fenêtre glisser et finirait par passer. Insister doit prolonger le
-     * refus, pas le raccourcir.</p>
-     */
+    // Une tentative refusée est comptée aussi : insister prolonge le refus.
     public synchronized boolean tryAcquire(String address) {
         Instant now = Instant.now();
         Instant floor = now.minus(WINDOW);

@@ -21,15 +21,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Les deux transports du jeton, et la réémission glissante dans chacun.
- *
- * <p>C'est le point où la transition peut se casser en silence. Le front actuel envoie
- * {@code Authorization: Bearer} et lit {@code X-Auth-Token} ; le front migré enverra un cookie et
- * n'aura rien à lire. Si la réémission repose un cookie à qui attend un en-tête, ou l'inverse,
- * tout continue de fonctionner — jusqu'à ce que l'utilisateur soit déconnecté au bout de quinze
- * minutes d'activité ininterrompue, symptôme qu'on ne rattache pas spontanément à sa cause.</p>
- */
 class JwtAuthenticationFilterTest {
 
     private static final String SECRET = "un-secret-de-test-assez-long-pour-hmac-sha256-oui-vraiment";
@@ -43,7 +34,6 @@ class JwtAuthenticationFilterTest {
     @BeforeEach
     void setUp() {
         identityService = mock(IdentityService.class);
-        // renewAfter = 0 : tout jeton est renouvelable, ce que ces tests veulent exercer.
         lecteur = new JwtService(new JwtProperties(SECRET, 1000, 0));
         filter = new JwtAuthenticationFilter(lecteur, identityService,
                 new AuthCookies(true), new JwtProperties(SECRET, 1000, 0));
@@ -131,8 +121,6 @@ class JwtAuthenticationFilterTest {
         String renouvele = response.getHeader(JwtAuthenticationFilter.RENEWED_TOKEN_HEADER);
 
         assertThat(lecteur.extractUserId(renouvele)).isEqualTo(USER_ID);
-        // Le jeton présenté ne portait que SERVER_VIEW : le renouvellement relit le cœur plutôt
-        // que de recopier, sans quoi un droit ajouté ou retiré ne prendrait jamais effet.
         assertThat(lecteur.extractPermissions(renouvele)).containsExactly("SERVER_VIEW", "SERVER_START");
     }
 

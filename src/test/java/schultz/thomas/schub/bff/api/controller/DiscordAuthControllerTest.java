@@ -28,20 +28,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Le flux OAuth, et surtout ses quatre façons de mal tourner sans bruit.
- *
- * <p>Un callback OAuth réussi se voit tout de suite ; ses échecs, non. Un {@code state} qui n'est
- * pas vérifié laisse passer un flux entier sans que rien ne paraisse anormal — c'est précisément
- * ce qui en fait une faille et pas un défaut de confort. De même, un cœur injoignable qui
- * aboutirait quand même à un jeton donnerait une session connectée refusée partout, symptôme bien
- * plus difficile à rattacher à sa cause qu'un refus net.</p>
- *
- * <p>Ce qui n'est <strong>pas</strong> couvert ici, et ne peut pas l'être : l'échange réel avec
- * Discord. Il demande un secret client et un navigateur, dont cet environnement ne dispose pas.
- * Tout ce qui touche au dialogue avec Discord est derrière {@link DiscordOAuthService}, qui est
- * simulé.</p>
- */
 class DiscordAuthControllerTest {
 
     private static final String DISCORD_ID = "227883780512153610";
@@ -92,8 +78,6 @@ class DiscordAuthControllerTest {
                 List.of("SERVER_VIEW", "SERVER_START"));
     }
 
-    // --- le départ ---
-
     @Test
     @DisplayName("le départ pose le state et le vérifieur PKCE avant de rediriger vers Discord")
     void departPoseLesCookies() throws Exception {
@@ -104,8 +88,6 @@ class DiscordAuthControllerTest {
         List<String> setCookies = result.getResponse().getHeaders("Set-Cookie");
         assertThat(setCookies).anyMatch(c -> c.startsWith(AuthCookies.OAUTH_STATE + "="));
         assertThat(setCookies).anyMatch(c -> c.startsWith(AuthCookies.OAUTH_VERIFIER + "="));
-        // Les deux attributs sans lesquels le cookie ne servirait à rien : illisible en
-        // JavaScript, et joint au retour de Discord, qui est une navigation venue d'un autre site.
         assertThat(setCookies).allMatch(c -> c.contains("HttpOnly") && c.contains("SameSite=Lax"));
     }
 
@@ -116,8 +98,6 @@ class DiscordAuthControllerTest {
 
         mvc.perform(get("/auth/discord")).andExpect(status().isServiceUnavailable());
     }
-
-    // --- le retour ---
 
     @Test
     @DisplayName("un callback sans state est refusé, et rien n'est demandé à Discord")
@@ -186,8 +166,6 @@ class DiscordAuthControllerTest {
                 .andExpect(status().isBadGateway())
                 .andReturn();
 
-        // Le point de ce test : émettre un jeton ici produirait une session qui « marche »
-        // jusqu'au premier appel métier, puis refusée partout sans explication lisible.
         assertThat(result.getResponse().getHeaders("Set-Cookie"))
                 .noneMatch(c -> c.startsWith(AuthCookies.SESSION + "=ey"));
     }
@@ -219,8 +197,6 @@ class DiscordAuthControllerTest {
 
         String token = session.substring((AuthCookies.SESSION + "=").length(), session.indexOf(';'));
         assertThat(jwtService.extractActorId(token)).isEqualTo(DISCORD_ID);
-        // Les deux identités, encore : sans `userId`, le front ne peut pas se reconnaître dans
-        // les `admins` d'un serveur.
         assertThat(jwtService.extractUserId(token)).isEqualTo(USER_ID);
         assertThat(jwtService.extractPermissions(token)).containsExactly("SERVER_VIEW", "SERVER_START");
     }

@@ -16,21 +16,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Supplier;
 
-/**
- * Traduction des pannes en amont, en un seul endroit.
- *
- * <p>Avant la phase 4, chaque méthode de passerelle répétait le même triplet try/catch/catch.
- * Il n'y a qu'une règle à appliquer, elle vit donc ici :</p>
- *
- * <ul>
- *   <li>Le service amont a répondu une erreur — on la relaie <em>telle quelle</em>, statut et
- *       corps compris. Un 404 du cœur doit arriver au front comme un 404, pas comme un 502 :
- *       sinon le front ne peut pas distinguer « ce serveur n'existe pas » de « le cœur est
- *       tombé ».</li>
- *   <li>Le service amont est injoignable — 502, et le nom du service dans le message. Avec
- *       plusieurs amonts, « upstream unreachable » ne suffit plus à savoir lequel est tombé.</li>
- * </ul>
- */
 @Service
 public class UpstreamGateway {
 
@@ -42,7 +27,6 @@ public class UpstreamGateway {
         this.objectMapper = objectMapper;
     }
 
-    /** Appel qui renvoie un corps JSON. */
     public ResponseEntity<byte[]> call(String upstream, Supplier<byte[]> call) {
         return call(upstream, HttpStatus.OK, call);
     }
@@ -59,7 +43,6 @@ public class UpstreamGateway {
         }
     }
 
-    /** Appel sans corps de réponse : répond 204. */
     public ResponseEntity<byte[]> callVoid(String upstream, Runnable call) {
         try {
             call.run();
@@ -71,12 +54,7 @@ public class UpstreamGateway {
         }
     }
 
-    /**
-     * Feign encode le corps depuis un objet ; le contrôleur, lui, reçoit des octets bruts qu'il
-     * ne doit pas interpréter. On les repasse en Map pour que l'encodeur les réémette à
-     * l'identique — le BFF ne connaît donc aucun champ du domaine, et une évolution du contrat
-     * du cœur ne le traverse pas.
-     */
+    // Repassé en Map pour que Feign le réémette à l'identique sans que le BFF connaisse le contrat du cœur.
     public Object parseBody(@Nullable byte[] body) {
         if (body == null || body.length == 0) {
             return Collections.emptyMap();

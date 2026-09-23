@@ -14,14 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * L'écran des rôles — la fenêtre réservée (lot A.5).
- *
- * <p>Écriture derrière {@code ROLE_MANAGE}, donc réservée à l'{@code OWNER} : la permission
- * n'est attribuable à aucun rôle (décision n°2). Lecture ouverte à {@code USER_VIEW} parce que
- * l'écran des utilisateurs a besoin de la liste des rôles pour en proposer un ; ce que la
- * décision protège est leur <em>composition</em>, pas leur existence.</p>
- */
 @RestController
 @RequestMapping("/roles")
 public class RoleProxyController {

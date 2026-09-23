@@ -13,14 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Redirections de ports. La politique vit dans le cœur ; la box est derrière son connecteur,
- * que le BFF ne connaît pas.
- *
- * <p>{@code PORT_RULE_EDIT} est une permission de rôle et le restera : ouvrir un port, c'est
- * écrire dans la table de redirections de la box — un pouvoir global, qu'on ne déguise pas en
- * pouvoir local sous prétexte qu'il sert un serveur précis (décision n°11).</p>
- */
 @RestController
 @RequestMapping("/port-forwarding")
 public class PortForwardingProxyController {
