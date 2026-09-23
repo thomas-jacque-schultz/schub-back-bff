@@ -128,6 +128,19 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.getTeamGamesStats(teamId, days, limit));
     }
 
+    @GetMapping("/{teamId}/stats/games/{matchId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> gameDetail(@PathVariable String teamId, @PathVariable String matchId) {
+        return gateway.call(UPSTREAM, () -> core.getTeamGameDetail(teamId, matchId));
+    }
+
+    @GetMapping("/{teamId}/stats/opposition")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> opposition(@PathVariable String teamId,
+                                             @RequestParam(required = false) Integer days) {
+        return gateway.call(UPSTREAM, () -> core.getTeamOpposition(teamId, days));
+    }
+
     @GetMapping("/{teamId}/games/{matchId}/reviews")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> gameReviews(@PathVariable String teamId,
