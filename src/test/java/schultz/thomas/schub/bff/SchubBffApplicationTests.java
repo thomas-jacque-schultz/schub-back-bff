@@ -12,8 +12,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
         // En ligne et pas dans un application.properties de test : celui-ci masquerait celui de main en entier.
-        "auth.admin.username=test-admin",
-        "auth.admin.password=test-password",
         "auth.jwt.secret=un-secret-de-test-assez-long-pour-hmac-sha256-oui-vraiment"
 })
 class SchubBffApplicationTests {
