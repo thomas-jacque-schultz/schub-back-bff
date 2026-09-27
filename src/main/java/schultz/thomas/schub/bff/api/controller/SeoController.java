@@ -50,12 +50,16 @@ public class SeoController {
         boolean en = anglais(lang);
         String origine = origine(request);
         String chemin = (en ? "/en" : "") + "/players/" + UriUtils.encodePathSegment(slug, StandardCharsets.UTF_8);
-        Optional<Summary> resume = seo.summary(slug);
+        PlayerSeoService.Lookup recherche = seo.lookup(slug);
+        Optional<Summary> resume = recherche.summary();
 
         StringBuilder html = new StringBuilder();
         if (resume.isEmpty()) {
-            html.append(balise("title", texte(slug.replaceFirst("-([^-]*)$", "#$1")) + " | PremadeLab"))
-                    .append("<meta name=\"robots\" content=\"noindex\" />");
+            html.append(balise("title", texte(slug.replaceFirst("-([^-]*)$", "#$1")) + " | PremadeLab"));
+            // Seul un joueur introuvable sort de l'index : une panne passagère ne doit pas lui retirer sa page.
+            if (!recherche.found()) {
+                html.append("<meta name=\"robots\" content=\"noindex\" />");
+            }
             return fragment(html.toString());
         }
         Summary joueur = resume.get();
