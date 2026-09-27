@@ -19,10 +19,12 @@ import schultz.thomas.schub.bff.config.ContactProperties;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, DiscordOAuthProperties.class, ContactProperties.class})
+@EnableConfigurationProperties({JwtProperties.class, DiscordOAuthProperties.class, FrontsProperties.class,
+        ContactProperties.class})
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -30,8 +32,11 @@ public class SecurityConfig {
     @Value("${auth.cors.allowed-origins:http://localhost:18090,http://localhost:5173}")
     private String allowedOrigins;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    private final FrontRegistry fronts;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, FrontRegistry fronts) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.fronts = fronts;
     }
 
     @Bean
@@ -58,9 +63,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
+        configuration.setAllowedOrigins(Stream.concat(
+                        Arrays.stream(allowedOrigins.split(",")).map(String::trim),
+                        fronts.all().stream().map(FrontsProperties.Front::origin))
                 .filter(value -> !value.isBlank())
+                .distinct()
                 .toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));

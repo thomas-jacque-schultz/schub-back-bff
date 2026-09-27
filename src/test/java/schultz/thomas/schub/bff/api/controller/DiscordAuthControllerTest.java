@@ -10,6 +10,8 @@ import schultz.thomas.schub.bff.business.service.DiscordOAuthService;
 import schultz.thomas.schub.bff.business.service.IdentityService;
 import schultz.thomas.schub.bff.config.security.AuthCookies;
 import schultz.thomas.schub.bff.config.security.DiscordOAuthProperties;
+import schultz.thomas.schub.bff.config.security.FrontRegistry;
+import schultz.thomas.schub.bff.config.security.FrontsProperties;
 import schultz.thomas.schub.bff.config.security.JwtProperties;
 import schultz.thomas.schub.bff.config.security.JwtService;
 import schultz.thomas.schub.bff.data.client.UserIdentityDto;
@@ -33,7 +35,8 @@ class DiscordAuthControllerTest {
     private static final String DISCORD_ID = "227883780512153610";
     private static final String USER_ID = "66f0a1b2c3d4e5f6a7b8c9d0";
     private static final String SECRET = "un-secret-de-test-assez-long-pour-hmac-sha256-oui-vraiment";
-    private static final String STATE = "un-state-aleatoire";
+    private static final String ALEA = "un-state-aleatoire";
+    private static final String STATE = ALEA + ".default";
 
     private DiscordOAuthService discord;
     private IdentityService identityService;
@@ -58,18 +61,23 @@ class DiscordAuthControllerTest {
     }
 
     private void construire(DiscordOAuthProperties properties) {
+        construire(properties, new FrontsProperties(List.of()));
+    }
+
+    private void construire(DiscordOAuthProperties properties, FrontsProperties frontsProperties) {
         discord = mock(DiscordOAuthService.class);
         identityService = mock(IdentityService.class);
         jwtService = new JwtService(new JwtProperties(SECRET, 900, 450));
         AuthCookies cookies = new AuthCookies(true);
 
-        when(discord.randomUrlSafeValue()).thenReturn(STATE);
-        when(discord.authorizationUrl(anyString(), anyString()))
+        when(discord.randomUrlSafeValue()).thenReturn(ALEA);
+        when(discord.authorizationUrl(anyString(), anyString(), anyString()))
                 .thenReturn("https://discord.com/oauth2/authorize?client_id=x&scope=identify&state=" + STATE);
 
         mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController(
                 discord, properties, identityService, jwtService,
-                new JwtProperties(SECRET, 900, 450), cookies)).build();
+                new JwtProperties(SECRET, 900, 450), cookies,
+                new FrontRegistry(frontsProperties, properties))).build();
     }
 
     private UserIdentityDto identite() {
@@ -82,7 +90,7 @@ class DiscordAuthControllerTest {
     @Test
     @DisplayName("le départ pose le state et le vérifieur PKCE avant de rediriger vers Discord")
     void departPoseLesCookies() throws Exception {
-        var result = mvc.perform(get("/auth/discord"))
+        var result = mvc.perform(get("/auth/discord").header("Host", "localhost:18090"))
                 .andExpect(status().isFound())
                 .andReturn();
 
@@ -97,7 +105,7 @@ class DiscordAuthControllerTest {
     void departNonConfigure() throws Exception {
         construire(proprietes(false));
 
-        mvc.perform(get("/auth/discord")).andExpect(status().isServiceUnavailable());
+        mvc.perform(get("/auth/discord").header("Host", "localhost:18090")).andExpect(status().isServiceUnavailable());
     }
 
     @Test
@@ -106,7 +114,7 @@ class DiscordAuthControllerTest {
         mvc.perform(get("/auth/discord/callback").param("code", "un-code"))
                 .andExpect(status().isBadRequest());
 
-        verify(discord, never()).exchangeCodeForProfile(anyString(), any());
+        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString());
     }
 
     @Test
@@ -118,7 +126,7 @@ class DiscordAuthControllerTest {
                         .cookie(new Cookie(AuthCookies.OAUTH_STATE, STATE)))
                 .andExpect(status().isBadRequest());
 
-        verify(discord, never()).exchangeCodeForProfile(anyString(), any());
+        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString());
     }
 
     @Test
@@ -139,7 +147,7 @@ class DiscordAuthControllerTest {
     @Test
     @DisplayName("un code refusé par Discord donne 502, pas une session")
     void callbackCodeInvalide() throws Exception {
-        when(discord.exchangeCodeForProfile(anyString(), any()))
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
                 .thenThrow(new DiscordOAuthService.DiscordOAuthException("Le code d'autorisation a été refusé"));
 
         var result = mvc.perform(get("/auth/discord/callback")
@@ -156,7 +164,7 @@ class DiscordAuthControllerTest {
     @Test
     @DisplayName("le cœur injoignable pendant le callback : 502 franc, pas un jeton sans permission")
     void callbackCoeurInjoignable() throws Exception {
-        when(discord.exchangeCodeForProfile(anyString(), any()))
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
                 .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", null));
         when(identityService.discordLogin(anyString(), any(), any())).thenReturn(Optional.empty());
 
@@ -174,7 +182,7 @@ class DiscordAuthControllerTest {
     @Test
     @DisplayName("un callback valide pose le jeton en cookie et renvoie le navigateur sur le site")
     void callbackNominal() throws Exception {
-        when(discord.exchangeCodeForProfile(anyString(), any()))
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
                 .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", "https://cdn/av.png"));
         when(identityService.discordLogin(DISCORD_ID, "pisel", "https://cdn/av.png"))
                 .thenReturn(Optional.of(identite()));
@@ -214,6 +222,68 @@ class DiscordAuthControllerTest {
 
         assertThat(result.getResponse().getHeaders("Set-Cookie"))
                 .noneMatch(c -> c.startsWith(AuthCookies.SESSION + "=ey"));
-        verify(discord, never()).exchangeCodeForProfile(anyString(), any());
+        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString());
+    }
+
+    private FrontsProperties deuxFronts() {
+        return new FrontsProperties(List.of(
+                new FrontsProperties.Front("schub", "https://schultz-thomas.fr",
+                        "https://schultz-thomas.fr/api/auth/discord/callback", "/"),
+                new FrontsProperties.Front("premadelab", "https://premadelab.eu",
+                        "https://premadelab.eu/api/auth/discord/callback", "/?connecte=1")));
+    }
+
+    @Test
+    @DisplayName("un hôte hors de la liste des fronts reçoit un refus, pas une redirection")
+    void hoteInconnu() throws Exception {
+        construire(proprietes(true), deuxFronts());
+
+        mvc.perform(get("/auth/discord").header("Host", "attaquant.example"))
+                .andExpect(status().isBadRequest())
+                .andExpect(header().doesNotExist("Location"));
+    }
+
+    @Test
+    @DisplayName("chaque front part vers Discord avec sa propre URL de retour")
+    void urlDeRetourDuFront() throws Exception {
+        construire(proprietes(true), deuxFronts());
+
+        mvc.perform(get("/auth/discord").header("X-Forwarded-Host", "premadelab.eu"))
+                .andExpect(status().isFound());
+
+        verify(discord).authorizationUrl(org.mockito.ArgumentMatchers.eq(ALEA + ".premadelab"), anyString(),
+                org.mockito.ArgumentMatchers.eq("https://premadelab.eu/api/auth/discord/callback"));
+    }
+
+    @Test
+    @DisplayName("le callback ramène sur le front d'origine, lu dans le state")
+    void callbackRameneAuFrontDOrigine() throws Exception {
+        construire(proprietes(true), deuxFronts());
+        String state = ALEA + ".premadelab";
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
+                .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", null));
+        when(identityService.discordLogin(anyString(), any(), any())).thenReturn(Optional.of(identite()));
+
+        mvc.perform(get("/auth/discord/callback")
+                        .param("code", "un-code")
+                        .param("state", state)
+                        .cookie(new Cookie(AuthCookies.OAUTH_STATE, state)))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/?connecte=1"));
+
+        verify(discord).exchangeCodeForProfile(anyString(), any(),
+                org.mockito.ArgumentMatchers.eq("https://premadelab.eu/api/auth/discord/callback"));
+    }
+
+    @Test
+    @DisplayName("un state qui désigne un front inconnu est refusé")
+    void stateFrontInconnu() throws Exception {
+        String state = ALEA + ".ailleurs";
+
+        mvc.perform(get("/auth/discord/callback")
+                        .param("code", "un-code")
+                        .param("state", state)
+                        .cookie(new Cookie(AuthCookies.OAUTH_STATE, state)))
+                .andExpect(status().isBadRequest());
     }
 }
