@@ -50,6 +50,9 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/game-servers/public-status").permitAll()
+                        // La vitrine de PremadeLab : chercher un joueur et voir sa page, sans compte.
+                        .requestMatchers(HttpMethod.GET, "/players/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/players/*/collect").permitAll()
                         // Seule route publique en écriture. Protégée dans ContactService (débit par IP, leurre, Turnstile) :
                         // ne retirer aucune couche sans la remplacer.
                         .requestMatchers(HttpMethod.POST, "/contact").permitAll()
