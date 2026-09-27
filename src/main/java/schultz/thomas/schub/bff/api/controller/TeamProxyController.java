@@ -130,6 +130,14 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.getTeamGamesStats(teamId, days, patches, limit));
     }
 
+    @GetMapping("/{teamId}/stats/findings")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> findings(@PathVariable String teamId,
+                                           @RequestParam(required = false) Integer days,
+                                           @RequestParam(required = false) Integer patches) {
+        return gateway.call(UPSTREAM, () -> core.getTeamFindings(teamId, days, patches));
+    }
+
     @GetMapping("/{teamId}/stats/synergy")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> synergy(@PathVariable String teamId,
