@@ -281,6 +281,11 @@ public interface CoreFeignClient {
                            @RequestParam(value = "days", required = false) Integer days,
                            @RequestParam(value = "patches", required = false) Integer patches);
 
+    @GetMapping("/teams/{teamId}/stats/synergy")
+    byte[] getTeamSynergy(@PathVariable("teamId") String teamId,
+                          @RequestParam(value = "days", required = false) Integer days,
+                          @RequestParam(value = "patches", required = false) Integer patches);
+
     @GetMapping("/teams/{teamId}/stats/team")
     byte[] getTeamGamesStats(@PathVariable("teamId") String teamId,
                              @RequestParam(value = "days", required = false) Integer days,
