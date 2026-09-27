@@ -54,6 +54,19 @@ public class MeProxyController {
         return gateway.call(UPSTREAM, () -> core.getMyGames(days, patches, limit));
     }
 
+    @GetMapping("/stats/findings")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> findings(@RequestParam(required = false) Integer days,
+                                           @RequestParam(required = false) Integer patches) {
+        return gateway.call(UPSTREAM, () -> core.getMyFindings(days, patches));
+    }
+
+    @GetMapping("/stats/games/{matchId}/findings")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> gameFindings(@PathVariable String matchId) {
+        return gateway.call(UPSTREAM, () -> core.getMyGameFindings(matchId));
+    }
+
     @GetMapping("/stats/games/{matchId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> game(@PathVariable String matchId,
