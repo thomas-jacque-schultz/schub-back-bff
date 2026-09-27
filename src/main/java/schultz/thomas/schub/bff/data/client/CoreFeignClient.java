@@ -62,6 +62,9 @@ public interface CoreFeignClient {
     @PutMapping("/ingest/crawler")
     byte[] toggleCrawler(@RequestBody Object body);
 
+    @GetMapping("/players/search")
+    byte[] searchPlayers(@RequestParam("q") String q, @RequestParam(value = "limit", required = false) Integer limit);
+
     @GetMapping("/players/{riotId}")
     byte[] getPlayer(@PathVariable("riotId") String riotId, @RequestParam(value = "days", required = false) Integer days,
                      @RequestParam(value = "patches", required = false) Integer patches,
