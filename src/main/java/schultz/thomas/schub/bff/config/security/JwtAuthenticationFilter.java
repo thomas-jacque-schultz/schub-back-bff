@@ -93,11 +93,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (!jwtService.shouldRenew(token.value())) {
             return;
         }
-        identityService.identity(actorId, null).ifPresentOrElse(identity -> {
+        identityService.byUserId(actorId).ifPresentOrElse(identity -> {
             String username = identity.user() != null ? identity.user().discordUsername() : null;
-            String userId = identity.user() != null ? identity.user().id() : jwtService.extractUserId(token.value());
             String renewed = jwtService.generateToken(
-                    actorId, userId, username, jwtService.extractRoles(token.value()), identity.permissionsOrEmpty());
+                    actorId, username, jwtService.extractRoles(token.value()), identity.permissionsOrEmpty());
             if (token.transport() == Transport.COOKIE) {
                 response.addHeader(HttpHeaders.SET_COOKIE,
                         cookies.session(renewed, jwtProperties.expirationSeconds()));

@@ -27,11 +27,11 @@ public class JwtService {
         this.jwtProperties = jwtProperties;
     }
 
-    public String generateToken(String actorId, String userId, String username,
+    public String generateToken(String userId, String username,
                                 Collection<String> roles, Collection<String> permissions) {
         Instant now = Instant.now();
         return Jwts.builder()
-                .subject(actorId)
+                .subject(userId)
                 .claim(CLAIM_USER_ID, userId)
                 .claim(CLAIM_USERNAME, username)
                 .claim(CLAIM_ROLES, List.copyOf(roles))
@@ -50,8 +50,9 @@ public class JwtService {
                 .getPayload();
     }
 
+    // L'identifiant interne : les jetons émis avant lui avaient l'identifiant Discord pour sujet, mais déjà ce claim.
     public String extractActorId(String token) {
-        return claims(token).getSubject();
+        return extractUserId(token);
     }
 
     public String extractUserId(String token) {

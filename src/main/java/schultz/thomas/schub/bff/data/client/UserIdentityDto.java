@@ -10,8 +10,12 @@ public record UserIdentityDto(Profile user, List<String> permissions) {
             String discordUsername,
             String avatarUrl,
             String roleId,
-            String roleName
+            String roleName,
+            Links links
     ) {
+    }
+
+    public record Links(boolean discord, boolean riot) {
     }
 
     public List<String> permissionsOrEmpty() {

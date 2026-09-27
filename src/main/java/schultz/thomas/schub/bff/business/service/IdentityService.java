@@ -19,15 +19,21 @@ public class IdentityService {
         this.core = core;
     }
 
-    public Optional<UserIdentityDto> identity(String discordId, String discordUsername) {
-        return identity(discordId, discordUsername, null);
-    }
-
-    public Optional<UserIdentityDto> identity(String discordId, String discordUsername, String avatarUrl) {
+    // Retrouve le compte par son identifiant Discord, ou le crée.
+    public Optional<UserIdentityDto> discordLogin(String discordId, String discordUsername, String avatarUrl) {
         try {
             return Optional.ofNullable(core.getIdentity(discordId, discordUsername, avatarUrl));
         } catch (Exception ex) {
-            log.warn("Identité indisponible pour l'acteur {} : {}", discordId, ex.getMessage());
+            log.warn("Identité indisponible pour le compte Discord {} : {}", discordId, ex.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    public Optional<UserIdentityDto> byUserId(String userId) {
+        try {
+            return Optional.ofNullable(core.getIdentityById(userId));
+        } catch (Exception ex) {
+            log.warn("Identité indisponible pour l'utilisateur {} : {}", userId, ex.getMessage());
             return Optional.empty();
         }
     }
