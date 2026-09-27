@@ -2,11 +2,13 @@ package schultz.thomas.schub.bff.business.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import schultz.thomas.schub.bff.data.client.CoreFeignClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -38,30 +40,43 @@ public class PlayerSeoService {
         }
     }
 
-    // Vide si le joueur est introuvable ou si le cœur ne répond pas : la page garde alors ses balises génériques.
-    public Optional<Summary> summary(String slug) {
+    // Joueur introuvable : FOUND=false. Cœur ou Riot indisponibles : vide, et surtout pas « introuvable ».
+    public record Lookup(boolean found, Optional<Summary> summary) {
+    }
+
+    public Lookup lookup(String slug) {
         try {
-            JsonNode page = objectMapper.readTree(core.getPlayer(slug, null, null, 30, false));
-            JsonNode overall = page.path("stats").path("overall");
-            List<String> champions = new ArrayList<>();
-            for (JsonNode ligne : page.path("stats").path("champions")) {
-                if (champions.size() < CHAMPIONS && ligne.hasNonNull("label")) {
-                    champions.add(ligne.get("label").asText());
-                }
-            }
-            return Optional.of(new Summary(
-                    page.path("gameName").asText(),
-                    page.path("tagLine").asText(),
-                    page.path("slug").asText(slug),
-                    solo(page.path("rankings")),
-                    overall.path("games").asLong(0),
-                    overall.hasNonNull("winRate") ? overall.get("winRate").asDouble() : null,
-                    overall.hasNonNull("kda") ? overall.get("kda").asDouble() : null,
-                    champions));
+            return new Lookup(true, Optional.of(read(slug)));
+        } catch (FeignException.NotFound introuvable) {
+            return new Lookup(false, Optional.empty());
         } catch (Exception ex) {
             log.debug("Résumé indisponible pour la page de {} : {}", slug, ex.getMessage());
-            return Optional.empty();
+            return new Lookup(true, Optional.empty());
         }
+    }
+
+    public Optional<Summary> summary(String slug) {
+        return lookup(slug).summary();
+    }
+
+    private Summary read(String slug) throws IOException {
+        JsonNode page = objectMapper.readTree(core.getPlayer(slug, null, null, 30, false));
+        JsonNode overall = page.path("stats").path("overall");
+        List<String> champions = new ArrayList<>();
+        for (JsonNode ligne : page.path("stats").path("champions")) {
+            if (champions.size() < CHAMPIONS && ligne.hasNonNull("label")) {
+                champions.add(ligne.get("label").asText());
+            }
+        }
+        return new Summary(
+                page.path("gameName").asText(),
+                page.path("tagLine").asText(),
+                page.path("slug").asText(slug),
+                solo(page.path("rankings")),
+                overall.path("games").asLong(0),
+                overall.hasNonNull("winRate") ? overall.get("winRate").asDouble() : null,
+                overall.hasNonNull("kda") ? overall.get("kda").asDouble() : null,
+                champions);
     }
 
     public List<String> trackedRiotIds() {

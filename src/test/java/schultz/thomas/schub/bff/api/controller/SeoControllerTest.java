@@ -37,10 +37,12 @@ class SeoControllerTest {
                         "https://premadelab.eu/api/auth/discord/callback", "/"))),
                 new DiscordOAuthProperties(null, null, null, null, null, null, null, true));
         mvc = MockMvcBuilders.standaloneSetup(new SeoController(seo, new PlayerCardRenderer(), fronts)).build();
-        when(seo.summary("Le <b>Nom-EUW")).thenReturn(Optional.of(new PlayerSeoService.Summary(
+        PlayerSeoService.Summary resume = new PlayerSeoService.Summary(
                 "Le <b>Nom", "EUW", "Le <b>Nom-EUW",
                 new PlayerSeoService.Rank("RANKED_SOLO_5x5", "GOLD", "II", 45, 30, 25),
-                55, 0.545, 3.14, List.of("Ahri", "Lux"))));
+                55, 0.545, 3.14, List.of("Ahri", "Lux"));
+        when(seo.summary("Le <b>Nom-EUW")).thenReturn(Optional.of(resume));
+        when(seo.lookup("Le <b>Nom-EUW")).thenReturn(new PlayerSeoService.Lookup(true, Optional.of(resume)));
     }
 
     @Test
@@ -61,7 +63,7 @@ class SeoControllerTest {
     @Test
     @DisplayName("un joueur introuvable n'est pas indexé")
     void introuvable() throws Exception {
-        when(seo.summary("Personne-000")).thenReturn(Optional.empty());
+        when(seo.lookup("Personne-000")).thenReturn(new PlayerSeoService.Lookup(false, Optional.empty()));
 
         String html = mvc.perform(get("/seo/players/{slug}/head", "Personne-000"))
                 .andReturn().getResponse().getContentAsString();
@@ -76,6 +78,17 @@ class SeoControllerTest {
         } catch (Exception | Error illisible) {
             return false;
         }
+    }
+
+    @Test
+    @DisplayName("une panne passagère ne retire pas la page de l'index")
+    void panne() throws Exception {
+        when(seo.lookup("Occupe-EUW")).thenReturn(new PlayerSeoService.Lookup(true, Optional.empty()));
+
+        String html = mvc.perform(get("/seo/players/{slug}/head", "Occupe-EUW"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).doesNotContain("noindex");
     }
 
     @Test
