@@ -31,6 +31,12 @@ public class IngestLoadProxyController {
         return gateway.call(UPSTREAM, core::getIngestLoad);
     }
 
+    @GetMapping("/summary")
+    @PreAuthorize("hasAuthority('INGEST_MANAGE')")
+    public ResponseEntity<byte[]> summary() {
+        return gateway.call(UPSTREAM, core::getIngestSummary);
+    }
+
     @GetMapping("/crawler")
     @PreAuthorize("hasAuthority('INGEST_VIEW')")
     public ResponseEntity<byte[]> crawler() {
