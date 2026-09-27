@@ -24,7 +24,7 @@ public class ContactController {
     @PostMapping
     public ResponseEntity<ContactResponse> submit(@RequestBody ContactRequest request,
                                                   HttpServletRequest httpRequest) {
-        ContactService.Outcome outcome = contactService.submit(request, clientAddress(httpRequest));
+        ContactService.Outcome outcome = contactService.submit(request, ClientAddress.of(httpRequest));
 
         return switch (outcome) {
             case DELIVERED -> ResponseEntity.ok(new ContactResponse(true));
@@ -36,19 +36,4 @@ public class ContactController {
         };
     }
 
-    // CF-Connecting-IP d'abord : Cloudflare le réécrit, le client ne peut pas le forger. X-Forwarded-For
-    // (première valeur) ne sert qu'en dev derrière nginx seul. getRemoteAddr() = nginx pour tout le monde.
-    private static String clientAddress(HttpServletRequest request) {
-        String cloudflare = request.getHeader("CF-Connecting-IP");
-        if (cloudflare != null && !cloudflare.isBlank()) {
-            return cloudflare.trim();
-        }
-
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-
-        return request.getRemoteAddr();
-    }
 }

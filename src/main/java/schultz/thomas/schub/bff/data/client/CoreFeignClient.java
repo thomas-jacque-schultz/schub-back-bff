@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "coreClient", url = "${core.base-url}", configuration = InternalSecretFeignConfig.class)
@@ -60,6 +61,32 @@ public interface CoreFeignClient {
 
     @PutMapping("/ingest/crawler")
     byte[] toggleCrawler(@RequestBody Object body);
+
+    @GetMapping("/players/{riotId}")
+    byte[] getPlayer(@PathVariable("riotId") String riotId, @RequestParam(value = "days", required = false) Integer days,
+                     @RequestParam(value = "patches", required = false) Integer patches,
+                     @RequestParam(value = "champions", required = false) Integer champions);
+
+    @GetMapping("/players/{riotId}/games")
+    byte[] getPlayerGames(@PathVariable("riotId") String riotId,
+                          @RequestParam(value = "days", required = false) Integer days,
+                          @RequestParam(value = "patches", required = false) Integer patches,
+                          @RequestParam(value = "limit", required = false) Integer limit);
+
+    @GetMapping("/players/{riotId}/games/{matchId}")
+    byte[] getPlayerGame(@PathVariable("riotId") String riotId, @PathVariable("matchId") String matchId,
+                         @RequestParam(value = "days", required = false) Integer days,
+                         @RequestParam(value = "patches", required = false) Integer patches);
+
+    @PostMapping("/players/{riotId}/collect")
+    byte[] collectPlayer(@PathVariable("riotId") String riotId,
+                         @RequestHeader("X-Visitor-Id") String visitor);
+
+    @GetMapping("/premadelab/settings")
+    byte[] getPremadeLabSettings();
+
+    @PutMapping("/premadelab/settings")
+    byte[] updatePremadeLabSettings(@RequestBody Object body);
 
     @GetMapping("/me")
     byte[] getMe();
