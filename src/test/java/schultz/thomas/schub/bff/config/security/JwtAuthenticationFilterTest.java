@@ -46,16 +46,17 @@ class JwtAuthenticationFilterTest {
 
     private String jetonAMiVie() {
         return new JwtService(new JwtProperties(SECRET, 1000, 0))
-                .generateToken(DISCORD_ID, USER_ID, "pisel", List.of(), List.of("SERVER_VIEW"));
+                .generateToken(USER_ID, "pisel", List.of(), List.of("SERVER_VIEW"));
     }
 
     private String jetonFrais() {
-        return lecteur.generateToken(DISCORD_ID, USER_ID, "pisel", List.of(), List.of("SERVER_VIEW"));
+        return lecteur.generateToken(USER_ID, "pisel", List.of(), List.of("SERVER_VIEW"));
     }
 
     private void coeurRepond() {
-        when(identityService.identity(anyString(), any())).thenReturn(Optional.of(new UserIdentityDto(
-                new UserIdentityDto.Profile(USER_ID, DISCORD_ID, "pisel", null, "role-1", "OWNER"),
+        when(identityService.byUserId(anyString())).thenReturn(Optional.of(new UserIdentityDto(
+                new UserIdentityDto.Profile(USER_ID, DISCORD_ID, "pisel", null, "role-1", "OWNER",
+                        new UserIdentityDto.Links(true, false)),
                 List.of("SERVER_VIEW", "SERVER_START"))));
     }
 
@@ -85,7 +86,7 @@ class JwtAuthenticationFilterTest {
         passe(request);
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
-        assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo(DISCORD_ID);
+        assertThat(SecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo(USER_ID);
         assertThat(request.getAttribute(JwtAuthenticationFilter.TOKEN_ATTRIBUTE)).isNotNull();
     }
 
@@ -127,7 +128,7 @@ class JwtAuthenticationFilterTest {
     @Test
     @DisplayName("cœur injoignable : on ne renouvelle pas, et on ne déconnecte pas non plus")
     void coeurInjoignablePendantLeRenouvellement() throws Exception {
-        when(identityService.identity(anyString(), any())).thenReturn(Optional.empty());
+        when(identityService.byUserId(anyString())).thenReturn(Optional.empty());
 
         MockHttpServletResponse response = passe(requeteCookie(jetonAMiVie()));
 

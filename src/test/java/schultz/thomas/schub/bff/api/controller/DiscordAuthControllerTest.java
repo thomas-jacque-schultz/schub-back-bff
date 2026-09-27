@@ -74,7 +74,8 @@ class DiscordAuthControllerTest {
 
     private UserIdentityDto identite() {
         return new UserIdentityDto(
-                new UserIdentityDto.Profile(USER_ID, DISCORD_ID, "pisel", null, "role-1", "OWNER"),
+                new UserIdentityDto.Profile(USER_ID, DISCORD_ID, "pisel", null, "role-1", "OWNER",
+                        new UserIdentityDto.Links(true, false)),
                 List.of("SERVER_VIEW", "SERVER_START"));
     }
 
@@ -157,7 +158,7 @@ class DiscordAuthControllerTest {
     void callbackCoeurInjoignable() throws Exception {
         when(discord.exchangeCodeForProfile(anyString(), any()))
                 .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", null));
-        when(identityService.identity(anyString(), any(), any())).thenReturn(Optional.empty());
+        when(identityService.discordLogin(anyString(), any(), any())).thenReturn(Optional.empty());
 
         var result = mvc.perform(get("/auth/discord/callback")
                         .param("code", "un-code")
@@ -175,7 +176,7 @@ class DiscordAuthControllerTest {
     void callbackNominal() throws Exception {
         when(discord.exchangeCodeForProfile(anyString(), any()))
                 .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", "https://cdn/av.png"));
-        when(identityService.identity(DISCORD_ID, "pisel", "https://cdn/av.png"))
+        when(identityService.discordLogin(DISCORD_ID, "pisel", "https://cdn/av.png"))
                 .thenReturn(Optional.of(identite()));
 
         var result = mvc.perform(get("/auth/discord/callback")
@@ -196,7 +197,7 @@ class DiscordAuthControllerTest {
         assertThat(session).contains("HttpOnly").contains("Secure").contains("SameSite=Lax").contains("Path=/");
 
         String token = session.substring((AuthCookies.SESSION + "=").length(), session.indexOf(';'));
-        assertThat(jwtService.extractActorId(token)).isEqualTo(DISCORD_ID);
+        assertThat(jwtService.extractActorId(token)).isEqualTo(USER_ID);
         assertThat(jwtService.extractUserId(token)).isEqualTo(USER_ID);
         assertThat(jwtService.extractPermissions(token)).containsExactly("SERVER_VIEW", "SERVER_START");
     }

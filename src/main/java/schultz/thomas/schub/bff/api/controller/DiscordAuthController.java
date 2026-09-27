@@ -105,7 +105,8 @@ public class DiscordAuthController {
         }
 
         Optional<UserIdentityDto> identity =
-                identityService.identity(profile.discordId(), profile.username(), profile.avatarUrl());
+                identityService.discordLogin(profile.discordId(), profile.username(), profile.avatarUrl())
+                        .filter(found -> found.user() != null && found.user().id() != null);
         if (identity.isEmpty()) {
             return withCleared(ResponseEntity.status(HttpStatus.BAD_GATEWAY), cleared)
                     .body(Map.of("error", "schub-core unreachable — impossible de déterminer les permissions"));
@@ -113,13 +114,12 @@ public class DiscordAuthController {
 
         UserIdentityDto dto = identity.get();
         String token = jwtService.generateToken(
-                profile.discordId(),
-                dto.user() != null ? dto.user().id() : null,
-                dto.user() != null ? dto.user().discordUsername() : profile.username(),
+                dto.user().id(),
+                dto.user().discordUsername() != null ? dto.user().discordUsername() : profile.username(),
                 List.of(),
                 dto.permissionsOrEmpty());
 
-        log.info("Connexion Discord réussie pour l'acteur {}", profile.discordId());
+        log.info("Connexion Discord réussie pour l'utilisateur {}", dto.user().id());
         return redirectHome(cleared)
                 .header(HttpHeaders.SET_COOKIE, cookies.session(token, jwtProperties.expirationSeconds()))
                 .build();

@@ -1,8 +1,10 @@
 package schultz.thomas.schub.bff.api.controller;
 
+import schultz.thomas.schub.bff.business.service.IdentityService;
 import schultz.thomas.schub.bff.config.security.AuthCookies;
 import schultz.thomas.schub.bff.config.security.JwtAuthenticationFilter;
 import schultz.thomas.schub.bff.config.security.JwtService;
+import schultz.thomas.schub.bff.data.client.UserIdentityDto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
@@ -20,10 +22,12 @@ public class AuthController {
 
     private final JwtService jwtService;
     private final AuthCookies cookies;
+    private final IdentityService identityService;
 
-    public AuthController(JwtService jwtService, AuthCookies cookies) {
+    public AuthController(JwtService jwtService, AuthCookies cookies, IdentityService identityService) {
         this.jwtService = jwtService;
         this.cookies = cookies;
+        this.identityService = identityService;
     }
 
     @GetMapping("/me")
@@ -35,11 +39,14 @@ public class AuthController {
 
         String jwt = String.valueOf(token);
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("actorId", authentication.getName());
-        body.put("userId", jwtService.extractUserId(jwt));
+        body.put("userId", authentication.getName());
         body.put("username", String.valueOf(jwtService.claims(jwt).get("username")));
         body.put("roles", jwtService.extractRoles(jwt));
         body.put("permissions", jwtService.extractPermissions(jwt));
+        identityService.byUserId(authentication.getName())
+                .map(UserIdentityDto::user)
+                .map(UserIdentityDto.Profile::links)
+                .ifPresent(links -> body.put("links", links));
         return ResponseEntity.ok(body);
     }
 

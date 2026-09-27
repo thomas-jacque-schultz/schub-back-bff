@@ -43,6 +43,9 @@ public interface CoreFeignClient {
                                 @RequestParam(value = "discordUsername", required = false) String discordUsername,
                                 @RequestParam(value = "avatarUrl", required = false) String avatarUrl);
 
+    @GetMapping("/users/{id}/identity")
+    UserIdentityDto getIdentityById(@PathVariable("id") String id);
+
     @GetMapping("/users")
     byte[] getUsers();
 
