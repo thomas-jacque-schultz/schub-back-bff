@@ -62,6 +62,45 @@ public interface CoreFeignClient {
     @PutMapping("/ingest/crawler")
     byte[] toggleCrawler(@RequestBody Object body);
 
+    @GetMapping("/me/stats/findings")
+    byte[] getMyFindings(@RequestParam(value = "days", required = false) Integer days,
+                         @RequestParam(value = "patches", required = false) Integer patches);
+
+    @GetMapping("/me/stats/games/{matchId}/findings")
+    byte[] getMyGameFindings(@PathVariable("matchId") String matchId);
+
+    @GetMapping("/players/{riotId}/findings")
+    byte[] getPlayerFindings(@PathVariable("riotId") String riotId,
+                             @RequestParam(value = "days", required = false) Integer days,
+                             @RequestParam(value = "patches", required = false) Integer patches);
+
+    @GetMapping("/players/{riotId}/games/{matchId}/findings")
+    byte[] getPlayerGameFindings(@PathVariable("riotId") String riotId, @PathVariable("matchId") String matchId);
+
+    @GetMapping("/players/{riotId}/trace")
+    byte[] getPlayerTrace(@PathVariable("riotId") String riotId,
+                          @RequestParam(value = "matchId", required = false) String matchId,
+                          @RequestParam(value = "days", required = false) Integer days);
+
+    @GetMapping("/augur/patterns")
+    byte[] getPatterns();
+
+    @GetMapping("/augur/patterns/{key}/versions")
+    byte[] getPatternVersions(@PathVariable("key") String key);
+
+    @PostMapping("/augur/patterns")
+    byte[] draftPattern(@RequestBody Object body);
+
+    @GetMapping("/augur/patterns/{key}/versions/{version}/impact")
+    byte[] getPatternImpact(@PathVariable("key") String key, @PathVariable("version") int version);
+
+    @PostMapping("/augur/patterns/{key}/versions/{version}/activate")
+    byte[] activatePattern(@PathVariable("key") String key, @PathVariable("version") int version,
+                           @RequestBody Object body);
+
+    @PostMapping("/augur/patterns/{key}/rollback")
+    byte[] rollbackPattern(@PathVariable("key") String key, @RequestBody Object body);
+
     @GetMapping("/players/tracked")
     byte[] getTrackedPlayers(@RequestParam("limit") int limit);
 

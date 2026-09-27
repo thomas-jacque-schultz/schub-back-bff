@@ -2,6 +2,7 @@ package schultz.thomas.schub.bff.api.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,6 +51,26 @@ public class PlayerProxyController {
                                        @RequestParam(required = false) Integer days,
                                        @RequestParam(required = false) Integer patches) {
         return gateway.call(UPSTREAM, () -> core.getPlayerGame(riotId, matchId, days, patches));
+    }
+
+    @GetMapping("/findings")
+    public ResponseEntity<byte[]> findings(@PathVariable String riotId,
+                                           @RequestParam(required = false) Integer days,
+                                           @RequestParam(required = false) Integer patches) {
+        return gateway.call(UPSTREAM, () -> core.getPlayerFindings(riotId, days, patches));
+    }
+
+    @GetMapping("/games/{matchId}/findings")
+    public ResponseEntity<byte[]> gameFindings(@PathVariable String riotId, @PathVariable String matchId) {
+        return gateway.call(UPSTREAM, () -> core.getPlayerGameFindings(riotId, matchId));
+    }
+
+    @GetMapping("/trace")
+    @PreAuthorize("hasAuthority('INGEST_MANAGE')")
+    public ResponseEntity<byte[]> trace(@PathVariable String riotId,
+                                        @RequestParam(required = false) String matchId,
+                                        @RequestParam(required = false) Integer days) {
+        return gateway.call(UPSTREAM, () -> core.getPlayerTrace(riotId, matchId, days));
     }
 
     // Le budget de recherche se compte par compte, ou par adresse IP sans compte.
