@@ -68,7 +68,8 @@ public interface CoreFeignClient {
     @GetMapping("/players/{riotId}")
     byte[] getPlayer(@PathVariable("riotId") String riotId, @RequestParam(value = "days", required = false) Integer days,
                      @RequestParam(value = "patches", required = false) Integer patches,
-                     @RequestParam(value = "champions", required = false) Integer champions);
+                     @RequestParam(value = "champions", required = false) Integer champions,
+                     @RequestParam(value = "light", required = false) Boolean light);
 
     @GetMapping("/players/{riotId}/games")
     byte[] getPlayerGames(@PathVariable("riotId") String riotId,
