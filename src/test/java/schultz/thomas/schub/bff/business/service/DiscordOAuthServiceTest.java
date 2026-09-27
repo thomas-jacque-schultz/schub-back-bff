@@ -32,7 +32,7 @@ class DiscordOAuthServiceTest {
     @DisplayName("l'URL d'autorisation ne demande que `identify`")
     void scopeIdentifySeul() {
         String url = URLDecoder.decode(
-                service.authorizationUrl("un-state", "un-verifieur"), StandardCharsets.UTF_8);
+                service.authorizationUrl("un-state", "un-verifieur", "http://localhost:18090/api/auth/discord/callback"), StandardCharsets.UTF_8);
 
         assertThat(url).contains("scope=identify");
         assertThat(url).doesNotContain("email").doesNotContain("guilds");
@@ -44,7 +44,7 @@ class DiscordOAuthServiceTest {
     void pkceS256() {
         String verifier = service.randomUrlSafeValue();
 
-        String url = URLDecoder.decode(service.authorizationUrl("un-state", verifier), StandardCharsets.UTF_8);
+        String url = URLDecoder.decode(service.authorizationUrl("un-state", verifier, "http://localhost:18090/api/auth/discord/callback"), StandardCharsets.UTF_8);
 
         assertThat(url).contains("code_challenge_method=S256");
         assertThat(url).contains("code_challenge=" + service.codeChallenge(verifier));
@@ -74,7 +74,7 @@ class DiscordOAuthServiceTest {
     @DisplayName("le secret client n'apparaît ni dans l'URL d'autorisation, ni dans un toString")
     void leSecretNeSortPas() {
         assertThat(properties.toString()).doesNotContain(SECRET_CLIENT).contains("masqué");
-        assertThat(service.authorizationUrl("s", "v")).doesNotContain(SECRET_CLIENT);
+        assertThat(service.authorizationUrl("s", "v", "http://localhost:18090/api/auth/discord/callback")).doesNotContain(SECRET_CLIENT);
     }
 
     @Test

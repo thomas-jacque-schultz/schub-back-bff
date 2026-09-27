@@ -44,10 +44,10 @@ public class DiscordOAuthService {
         return URL_ENCODER.encodeToString(bytes);
     }
 
-    public String authorizationUrl(String state, String codeVerifier) {
+    public String authorizationUrl(String state, String codeVerifier, String redirectUri) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(properties.authorizationUri())
                 .queryParam("client_id", properties.clientId())
-                .queryParam("redirect_uri", properties.redirectUri())
+                .queryParam("redirect_uri", redirectUri)
                 .queryParam("response_type", "code")
                 .queryParam("scope", SCOPE)
                 .queryParam("state", state);
@@ -68,18 +68,18 @@ public class DiscordOAuthService {
         }
     }
 
-    public DiscordProfile exchangeCodeForProfile(String code, String codeVerifier) {
-        String accessToken = exchangeCode(code, codeVerifier);
+    public DiscordProfile exchangeCodeForProfile(String code, String codeVerifier, String redirectUri) {
+        String accessToken = exchangeCode(code, codeVerifier, redirectUri);
         return fetchProfile(accessToken);
     }
 
-    private String exchangeCode(String code, String codeVerifier) {
+    private String exchangeCode(String code, String codeVerifier, String redirectUri) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("client_id", properties.clientId());
         form.add("client_secret", properties.clientSecret());
         form.add("grant_type", "authorization_code");
         form.add("code", code);
-        form.add("redirect_uri", properties.redirectUri());
+        form.add("redirect_uri", redirectUri);
         if (properties.pkceEnabled() && codeVerifier != null) {
             form.add("code_verifier", codeVerifier);
         }
