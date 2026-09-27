@@ -62,6 +62,9 @@ public interface CoreFeignClient {
     @PutMapping("/ingest/crawler")
     byte[] toggleCrawler(@RequestBody Object body);
 
+    @GetMapping("/players/tracked")
+    byte[] getTrackedPlayers(@RequestParam("limit") int limit);
+
     @GetMapping("/players/search")
     byte[] searchPlayers(@RequestParam("q") String q, @RequestParam(value = "limit", required = false) Integer limit);
 
