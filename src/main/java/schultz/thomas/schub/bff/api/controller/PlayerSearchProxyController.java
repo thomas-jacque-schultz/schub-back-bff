@@ -22,4 +22,9 @@ public class PlayerSearchProxyController {
     public ResponseEntity<byte[]> search(@RequestParam String q, @RequestParam(required = false) Integer limit) {
         return gateway.call("schub-core", () -> core.searchPlayers(q, limit));
     }
+
+    @GetMapping("/players/history-window")
+    public ResponseEntity<byte[]> historyWindow() {
+        return gateway.call("schub-core", core::getHistoryWindow);
+    }
 }
