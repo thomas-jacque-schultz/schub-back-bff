@@ -35,11 +35,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final IdentityService identityService;
     private final AuthCookies cookies;
     private final JwtProperties jwtProperties;
+    private final FrontRegistry fronts;
 
     public JwtAuthenticationFilter(JwtService jwtService,
                                    IdentityService identityService,
                                    AuthCookies cookies,
-                                   JwtProperties jwtProperties) {
+                                   JwtProperties jwtProperties,
+                                   FrontRegistry fronts) {
+        this.fronts = fronts;
         this.jwtService = jwtService;
         this.identityService = identityService;
         this.cookies = cookies;
@@ -62,7 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (actorId != null && jwtService.isTokenValid(token.value())) {
                 authenticate(actorId, token.value());
                 request.setAttribute(TOKEN_ATTRIBUTE, token.value());
-                renewIfNeeded(actorId, token, response);
+                renewIfNeeded(actorId, token, request, response);
             }
         } catch (JwtException ignored) {
             SecurityContextHolder.clearContext();
@@ -89,7 +92,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 new UsernamePasswordAuthenticationToken(actorId, null, authorities));
     }
 
-    private void renewIfNeeded(String actorId, PresentedToken token, HttpServletResponse response) {
+    private void renewIfNeeded(String actorId, PresentedToken token, HttpServletRequest request,
+                               HttpServletResponse response) {
         if (!jwtService.shouldRenew(token.value())) {
             return;
         }
@@ -103,6 +107,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } else {
                 response.setHeader(RENEWED_TOKEN_HEADER, renewed);
             }
+            identityService.recordActivity(actorId, fronts.of(request).map(FrontsProperties.Front::key).orElse(null));
             log.debug("Jeton renouvelé pour l'acteur {} (transport {})", actorId, token.transport());
         }, () -> log.warn("Renouvellement impossible pour l'acteur {} — le jeton en cours reste valide", actorId));
     }

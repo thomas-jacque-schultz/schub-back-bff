@@ -50,6 +50,9 @@ public interface CoreFeignClient {
     @GetMapping("/users")
     byte[] getUsers();
 
+    @GetMapping("/users/stats")
+    byte[] getUserStats();
+
     @GetMapping("/ingest/load")
     byte[] getIngestLoad();
 
@@ -111,7 +114,11 @@ public interface CoreFeignClient {
     byte[] getTrackedPlayers(@RequestParam("limit") int limit);
 
     @GetMapping("/players/search")
-    byte[] searchPlayers(@RequestParam("q") String q, @RequestParam(value = "limit", required = false) Integer limit);
+    byte[] searchPlayers(@RequestParam("q") String q, @RequestParam(value = "limit", required = false) Integer limit,
+                         @RequestHeader(value = "X-Visitor", required = false) String visitor);
+
+    @PostMapping("/users/{id}/activity")
+    void recordActivity(@PathVariable("id") String id, @RequestParam("app") String app);
 
     @GetMapping("/players/{riotId}")
     byte[] getPlayer(@PathVariable("riotId") String riotId, @RequestParam(value = "days", required = false) Integer days,

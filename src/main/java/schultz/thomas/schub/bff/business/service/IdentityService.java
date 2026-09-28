@@ -29,6 +29,15 @@ public class IdentityService {
         }
     }
 
+    // Au plus une fois par heure et par session : à la connexion et au renouvellement du jeton.
+    public void recordActivity(String userId, String app) {
+        try {
+            core.recordActivity(userId, app == null ? "schub" : app);
+        } catch (Exception ex) {
+            log.debug("Activité non enregistrée pour {} : {}", userId, ex.getMessage());
+        }
+    }
+
     public Optional<UserIdentityDto> byUserId(String userId) {
         try {
             return Optional.ofNullable(core.getIdentityById(userId));

@@ -36,7 +36,7 @@ class JwtAuthenticationFilterTest {
         identityService = mock(IdentityService.class);
         lecteur = new JwtService(new JwtProperties(SECRET, 1000, 0));
         filter = new JwtAuthenticationFilter(lecteur, identityService,
-                new AuthCookies(true), new JwtProperties(SECRET, 1000, 0));
+                new AuthCookies(true), new JwtProperties(SECRET, 1000, 0), mock(FrontRegistry.class));
     }
 
     @AfterEach
