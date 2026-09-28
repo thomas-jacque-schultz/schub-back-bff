@@ -1,6 +1,7 @@
 package schultz.thomas.schub.bff.api.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,7 +25,8 @@ public class ContactController {
     @PostMapping
     public ResponseEntity<ContactResponse> submit(@RequestBody ContactRequest request,
                                                   HttpServletRequest httpRequest) {
-        ContactService.Outcome outcome = contactService.submit(request, ClientAddress.of(httpRequest));
+        ContactService.Outcome outcome = contactService.submit(request, ClientAddress.of(httpRequest),
+                hoteDe(httpRequest.getHeader(HttpHeaders.ORIGIN)));
 
         return switch (outcome) {
             case DELIVERED -> ResponseEntity.ok(new ContactResponse(true));
@@ -36,4 +38,14 @@ public class ContactController {
         };
     }
 
+    private static String hoteDe(String origin) {
+        if (origin == null) {
+            return null;
+        }
+        try {
+            return java.net.URI.create(origin).getHost();
+        } catch (IllegalArgumentException illisible) {
+            return null;
+        }
+    }
 }

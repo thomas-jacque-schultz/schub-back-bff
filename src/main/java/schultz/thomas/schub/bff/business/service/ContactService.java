@@ -44,6 +44,11 @@ public class ContactService {
     }
 
     public Outcome submit(ContactRequest request, String remoteAddress) {
+        return submit(request, remoteAddress, null);
+    }
+
+    // site : l'hôte de l'en-tête Origin, pour savoir depuis quelle application le message part.
+    public Outcome submit(ContactRequest request, String remoteAddress, String site) {
         if (!rateLimiter.tryAcquire(remoteAddress)) {
             return Outcome.RATE_LIMITED;
         }
@@ -70,7 +75,7 @@ public class ContactService {
             return Outcome.UNAVAILABLE;
         }
 
-        return deliver(request);
+        return deliver(request, site);
     }
 
     private boolean isWellFormed(ContactRequest request) {
@@ -87,19 +92,19 @@ public class ContactService {
         return message.length() >= MIN_MESSAGE_LENGTH && message.length() <= properties.maxMessageLength();
     }
 
-    private Outcome deliver(ContactRequest request) {
+    private Outcome deliver(ContactRequest request, String site) {
         String name = trimmed(request.name());
         String email = trimmed(request.email());
 
         DirectMessageRequest payload = new DirectMessageRequest(
                 properties.recipientId(),
-                "Message depuis schultz-thomas.fr",
+                "Message depuis " + (site == null || site.isBlank() ? "le site" : site),
                 """
                         **De** : %s
                         **Adresse** : %s
 
                         %s""".formatted(name, email, trimmed(request.message())),
-                "Formulaire de contact du portfolio"
+                "Formulaire de contact"
         );
 
         try {
