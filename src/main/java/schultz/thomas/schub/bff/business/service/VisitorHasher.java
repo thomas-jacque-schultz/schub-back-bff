@@ -18,10 +18,8 @@ public class VisitorHasher {
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
 
     private final SecureRandom aleatoire = new SecureRandom();
-    private volatile Sel sel;
-
-    private record Sel(LocalDate jour, byte[] octets) {
-    }
+    private LocalDate jourDuSel;
+    private byte[] sel;
 
     public String hash(String address, String userAgent) {
         byte[] octets = selDu(LocalDate.now(PARIS));
@@ -38,13 +36,11 @@ public class VisitorHasher {
     }
 
     private synchronized byte[] selDu(LocalDate jour) {
-        Sel courant = sel;
-        if (courant == null || !courant.jour().equals(jour)) {
-            byte[] octets = new byte[32];
-            aleatoire.nextBytes(octets);
-            courant = new Sel(jour, octets);
-            sel = courant;
+        if (!jour.equals(jourDuSel)) {
+            sel = new byte[32];
+            aleatoire.nextBytes(sel);
+            jourDuSel = jour;
         }
-        return courant.octets();
+        return sel.clone();
     }
 }
