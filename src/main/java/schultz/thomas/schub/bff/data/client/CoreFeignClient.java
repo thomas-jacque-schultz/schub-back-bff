@@ -65,6 +65,18 @@ public interface CoreFeignClient {
     @PutMapping("/ingest/crawler")
     byte[] toggleCrawler(@RequestBody Object body);
 
+    @GetMapping("/ingest/pause")
+    byte[] getIngestPause();
+
+    @PutMapping("/ingest/pause")
+    byte[] updateIngestPause(@RequestBody Object body);
+
+    @GetMapping("/ingest/riot-data")
+    byte[] getRiotDataInventory();
+
+    @PostMapping("/ingest/riot-data/invalidate")
+    byte[] invalidateRiotData(@RequestBody Object body);
+
     @GetMapping("/players/history-window")
     byte[] getHistoryWindow();
 
