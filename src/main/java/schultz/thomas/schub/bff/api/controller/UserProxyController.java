@@ -32,6 +32,12 @@ public class UserProxyController {
         return gateway.call(UPSTREAM, core::getUsers);
     }
 
+    @GetMapping("/stats")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
+    public ResponseEntity<byte[]> stats() {
+        return gateway.call(UPSTREAM, core::getUserStats);
+    }
+
     @GetMapping("/me/riot-account")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> myRiotAccount() {

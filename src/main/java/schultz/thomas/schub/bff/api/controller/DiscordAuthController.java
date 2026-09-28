@@ -136,6 +136,7 @@ public class DiscordAuthController {
                 List.of(),
                 dto.permissionsOrEmpty());
 
+        identityService.recordActivity(dto.user().id(), front.get().key());
         log.info("Connexion Discord réussie pour l'utilisateur {} sur le front {}", dto.user().id(), front.get().key());
         return redirectTo(front.get().postLoginRedirect(), cleared)
                 .header(HttpHeaders.SET_COOKIE, cookies.session(token, jwtProperties.expirationSeconds()))
