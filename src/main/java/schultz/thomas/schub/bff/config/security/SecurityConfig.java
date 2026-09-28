@@ -1,5 +1,6 @@
 package schultz.thomas.schub.bff.config.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -58,6 +59,8 @@ public class SecurityConfig {
                         // Seule route publique en écriture. Protégée dans ContactService (débit par IP, leurre, Turnstile) :
                         // ne retirer aucune couche sans la remplacer.
                         .requestMatchers(HttpMethod.POST, "/contact").permitAll()
+                        // Le dispatch vers /error perd le contexte de sécurité : sans cette règle, une requête mal formée ressort en 403.
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
