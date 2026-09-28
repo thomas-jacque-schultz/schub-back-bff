@@ -62,6 +62,12 @@ public interface CoreFeignClient {
     @PutMapping("/ingest/crawler")
     byte[] toggleCrawler(@RequestBody Object body);
 
+    @GetMapping("/players/history-window")
+    byte[] getHistoryWindow();
+
+    @PutMapping("/ingest/history-window")
+    byte[] updateHistoryWindow(@RequestBody Object body);
+
     @GetMapping("/me/stats/findings")
     byte[] getMyFindings(@RequestParam(value = "days", required = false) Integer days,
                          @RequestParam(value = "patches", required = false) Integer patches);

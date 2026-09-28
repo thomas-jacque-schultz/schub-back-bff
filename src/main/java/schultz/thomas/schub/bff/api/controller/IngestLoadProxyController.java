@@ -48,4 +48,10 @@ public class IngestLoadProxyController {
     public ResponseEntity<byte[]> toggleCrawler(@RequestBody(required = false) byte[] body) {
         return gateway.call(UPSTREAM, () -> core.toggleCrawler(gateway.parseBody(body)));
     }
+
+    @PutMapping("/history-window")
+    @PreAuthorize("hasAuthority('INGEST_MANAGE')")
+    public ResponseEntity<byte[]> updateHistoryWindow(@RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.updateHistoryWindow(gateway.parseBody(body)));
+    }
 }
