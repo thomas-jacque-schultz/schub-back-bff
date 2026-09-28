@@ -6,6 +6,7 @@ import schultz.thomas.schub.bff.data.client.CoreFeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,6 +48,31 @@ public class IngestLoadProxyController {
     @PreAuthorize("hasAuthority('INGEST_MANAGE')")
     public ResponseEntity<byte[]> toggleCrawler(@RequestBody(required = false) byte[] body) {
         return gateway.call(UPSTREAM, () -> core.toggleCrawler(gateway.parseBody(body)));
+    }
+
+    @GetMapping("/pause")
+    @PreAuthorize("hasAuthority('INGEST_VIEW')")
+    public ResponseEntity<byte[]> pause() {
+        return gateway.call(UPSTREAM, core::getIngestPause);
+    }
+
+    @PutMapping("/pause")
+    @PreAuthorize("hasAuthority('INGEST_MANAGE')")
+    public ResponseEntity<byte[]> updatePause(@RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.updateIngestPause(gateway.parseBody(body)));
+    }
+
+    // ROLE_MANAGE n'est jamais attribuable : seul l'OWNER invalide les données Riot.
+    @GetMapping("/riot-data")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    public ResponseEntity<byte[]> riotData() {
+        return gateway.call(UPSTREAM, core::getRiotDataInventory);
+    }
+
+    @PostMapping("/riot-data/invalidate")
+    @PreAuthorize("hasAuthority('ROLE_MANAGE')")
+    public ResponseEntity<byte[]> invalidateRiotData(@RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.invalidateRiotData(gateway.parseBody(body)));
     }
 
     @PutMapping("/history-window")
