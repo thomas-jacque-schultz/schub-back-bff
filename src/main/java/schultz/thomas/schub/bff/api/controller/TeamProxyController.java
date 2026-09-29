@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Contrôle grossier limité à isAuthenticated() : TEAM_VIEW, TEAM_EDIT et COMPOSITION_EDIT sont à portée
+// Contrôle grossier limité à isAuthenticated() : TEAM_VIEW, TEAM_MANAGE, ROSTER_EDIT et COMPOSITION_EDIT sont à portée
 // d'équipe, le JWT ne les porte pas, le cœur tranche. Seule TEAM_CREATE (globale) se vérifie ici.
 @RestController
 @RequestMapping("/teams")
