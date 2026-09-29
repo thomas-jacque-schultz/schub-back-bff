@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TeamProxyAuthorizationTest {
 
-    private static final List<String> A_PORTEE_D_EQUIPE = List.of("TEAM_VIEW", "TEAM_EDIT", "COMPOSITION_EDIT");
+    private static final List<String> A_PORTEE_D_EQUIPE = List.of("TEAM_VIEW", "TEAM_MANAGE", "ROSTER_EDIT", "COMPOSITION_EDIT");
 
     @Test
     @DisplayName("aucune route d'équipe n'exige une permission à portée d'équipe")
