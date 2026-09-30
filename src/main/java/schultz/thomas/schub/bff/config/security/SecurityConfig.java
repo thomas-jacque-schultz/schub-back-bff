@@ -54,6 +54,8 @@ public class SecurityConfig {
                         // La vitrine de PremadeLab : chercher un joueur et voir sa page, sans compte.
                         .requestMatchers(HttpMethod.GET, "/players/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/players/*/collect").permitAll()
+                        // Agrégats par palier et par champion, sans donnée personnelle : la page publique d'un joueur les lit.
+                        .requestMatchers(HttpMethod.GET, "/lol/references/**").permitAll()
                         // Les fragments SSI, la carte d'aperçu et le plan du site des pages de joueur.
                         .requestMatchers(HttpMethod.GET, "/seo/**").permitAll()
                         // Seule route publique en écriture. Protégée dans ContactService (débit par IP, leurre, Turnstile) :
