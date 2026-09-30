@@ -1,7 +1,6 @@
 package schultz.thomas.schub.bff.api.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,13 +25,11 @@ public class ReferenceProxyController {
     }
 
     @GetMapping("/champions/{championId}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> champion(@PathVariable int championId, @RequestParam String tier) {
         return sansCorps(gateway.call(UPSTREAM, () -> core.getChampionGrid(championId, tier)));
     }
 
     @GetMapping("/{position}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> grid(@PathVariable String position,
                                        @RequestParam(required = false) String scope,
                                        @RequestParam(required = false) String tier,
