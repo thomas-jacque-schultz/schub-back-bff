@@ -257,26 +257,6 @@ public interface CoreFeignClient {
     void deleteComposition(@PathVariable("teamId") String teamId,
                            @PathVariable("compositionId") String compositionId);
 
-    @GetMapping("/teams/{teamId}/games/{matchId}/reviews")
-    byte[] getGameReviews(@PathVariable("teamId") String teamId,
-                          @PathVariable("matchId") String matchId);
-
-    @PostMapping("/teams/{teamId}/games/{matchId}/reviews")
-    byte[] createGameReview(@PathVariable("teamId") String teamId,
-                            @PathVariable("matchId") String matchId,
-                            @RequestBody Object body);
-
-    @PutMapping("/teams/{teamId}/games/{matchId}/reviews/{reviewId}")
-    byte[] updateGameReview(@PathVariable("teamId") String teamId,
-                            @PathVariable("matchId") String matchId,
-                            @PathVariable("reviewId") String reviewId,
-                            @RequestBody Object body);
-
-    @DeleteMapping("/teams/{teamId}/games/{matchId}/reviews/{reviewId}")
-    void deleteGameReview(@PathVariable("teamId") String teamId,
-                          @PathVariable("matchId") String matchId,
-                          @PathVariable("reviewId") String reviewId);
-
     @GetMapping("/teams/{teamId}/champion-pool")
     byte[] getChampionPool(@PathVariable("teamId") String teamId,
                            @RequestParam(value = "masteryFloor", required = false) Integer masteryFloor);
