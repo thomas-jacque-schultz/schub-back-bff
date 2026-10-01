@@ -44,6 +44,12 @@ public class IngestLoadProxyController {
         return gateway.call(UPSTREAM, core::getCrawler);
     }
 
+    @GetMapping("/accounts-by-rank")
+    @PreAuthorize("hasAuthority(INGEST_VIEW)")
+    public ResponseEntity<byte[]> accountsByRank() {
+        return gateway.call(UPSTREAM, core::getAccountsByRank);
+    }
+
     @PutMapping("/crawler")
     @PreAuthorize("hasAuthority('INGEST_MANAGE')")
     public ResponseEntity<byte[]> toggleCrawler(@RequestBody(required = false) byte[] body) {

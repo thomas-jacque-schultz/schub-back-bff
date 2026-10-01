@@ -62,6 +62,9 @@ public interface CoreFeignClient {
     @GetMapping("/ingest/crawler")
     byte[] getCrawler();
 
+    @GetMapping("/ingest/accounts-by-rank")
+    byte[] getAccountsByRank();
+
     @PutMapping("/ingest/crawler")
     byte[] toggleCrawler(@RequestBody Object body);
 
