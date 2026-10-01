@@ -35,4 +35,16 @@ public class DiscordProxyController {
     public ResponseEntity<byte[]> subscribeChannels(@RequestBody(required = false) byte[] body) {
         return gateway.callVoid(UPSTREAM, () -> discord.subscribeChannels(gateway.parseBody(body)));
     }
+
+    @GetMapping("/channels/clean")
+    @PreAuthorize("hasAuthority('DISCORD_CHANNEL_MANAGE')")
+    public ResponseEntity<byte[]> previewChannelCleanup() {
+        return gateway.call(UPSTREAM, discord::previewChannelCleanup);
+    }
+
+    @PostMapping("/channels/clean")
+    @PreAuthorize("hasAuthority('DISCORD_CHANNEL_MANAGE')")
+    public ResponseEntity<byte[]> cleanChannels() {
+        return gateway.call(UPSTREAM, discord::cleanChannels);
+    }
 }

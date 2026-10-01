@@ -33,6 +33,16 @@ class ContactServiceTest {
         }
 
         @Override
+        public byte[] previewChannelCleanup() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public byte[] cleanChannels() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public DirectMessageAck sendDirectMessage(DirectMessageRequest request) {
             if (failure != null) {
                 throw failure;
