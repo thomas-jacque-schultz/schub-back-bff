@@ -45,7 +45,7 @@ public class IngestLoadProxyController {
     }
 
     @GetMapping("/accounts-by-rank")
-    @PreAuthorize("hasAuthority(INGEST_VIEW)")
+    @PreAuthorize("hasAuthority('INGEST_VIEW')")
     public ResponseEntity<byte[]> accountsByRank() {
         return gateway.call(UPSTREAM, core::getAccountsByRank);
     }
