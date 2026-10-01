@@ -19,6 +19,12 @@ public interface ConnectorDiscordFeignClient {
     @PostMapping("/discord/channels/subscribe")
     void subscribeChannels(@RequestBody Object body);
 
+    @GetMapping("/discord/channels/clean")
+    byte[] previewChannelCleanup();
+
+    @PostMapping("/discord/channels/clean")
+    byte[] cleanChannels();
+
     @PostMapping("/discord/direct-messages")
     DirectMessageAck sendDirectMessage(@RequestBody DirectMessageRequest request);
 }
