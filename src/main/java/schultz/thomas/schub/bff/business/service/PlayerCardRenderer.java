@@ -23,12 +23,12 @@ public class PlayerCardRenderer {
 
     private static final int LARGEUR = 1200;
     private static final int HAUTEUR = 630;
-    private static final Color NUIT = new Color(0x08, 0x0D, 0x12);
-    private static final Color PAPIER = new Color(0x0F, 0x17, 0x1F);
-    private static final Color MENTHE = new Color(0x3D, 0xD6, 0xB5);
-    private static final Color CORAIL = new Color(0xFF, 0x7A, 0x59);
-    private static final Color TEXTE = new Color(0xE6, 0xEE, 0xF1);
-    private static final Color SECONDAIRE = new Color(0x9A, 0xAE, 0xB7);
+    private static final Color OBSIDIENNE = new Color(0x0A, 0x06, 0x0C);
+    private static final Color PAPIER = new Color(0x15, 0x0D, 0x18);
+    private static final Color OR = new Color(0xC9, 0xA2, 0x27);
+    private static final Color PRUNE = new Color(0xA4, 0x47, 0x7E);
+    private static final Color TEXTE = new Color(0xF2, 0xE9, 0xEE);
+    private static final Color SECONDAIRE = new Color(0xB6, 0xA3, 0xB4);
 
     // Chargées à la première carte : le démarrage du BFF n'en dépend pas.
     private static final class Polices {
@@ -51,18 +51,18 @@ public class PlayerCardRenderer {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-            g.setColor(NUIT);
+            g.setColor(OBSIDIENNE);
             g.fillRect(0, 0, LARGEUR, HAUTEUR);
             g.setColor(PAPIER);
-            g.fillRoundRect(60, 60, LARGEUR - 120, HAUTEUR - 120, 16, 16);
-            g.setColor(new Color(0x3D, 0xD6, 0xB5, 40));
+            g.fillRoundRect(60, 60, LARGEUR - 120, HAUTEUR - 120, 8, 8);
+            g.setColor(new Color(0xC9, 0xA2, 0x27, 60));
             g.setStroke(new BasicStroke(2f));
-            g.drawRoundRect(60, 60, LARGEUR - 120, HAUTEUR - 120, 16, 16);
+            g.drawRoundRect(60, 60, LARGEUR - 120, HAUTEUR - 120, 8, 8);
 
             // La marque : deux pastilles qui se chevauchent, le premade.
-            g.setColor(MENTHE);
+            g.setColor(PRUNE);
             g.fillOval(108, 112, 44, 44);
-            g.setColor(new Color(0xFF, 0x7A, 0x59, 215));
+            g.setColor(new Color(0xC9, 0xA2, 0x27, 215));
             g.fillOval(132, 100, 44, 44);
             g.setColor(TEXTE);
             g.setFont(Polices.BOLD.deriveFont(34f));
@@ -72,7 +72,7 @@ public class PlayerCardRenderer {
             g.drawString(riotId, 110, 290);
 
             if (rankLine != null) {
-                g.setColor(MENTHE);
+                g.setColor(OR);
                 g.setFont(Polices.BOLD.deriveFont(40f));
                 g.drawString(rankLine, 110, 360);
             }
@@ -85,7 +85,7 @@ public class PlayerCardRenderer {
                 y += 50;
             }
 
-            g.setColor(CORAIL);
+            g.setColor(OR);
             g.fillRect(110, HAUTEUR - 110, 80, 6);
         } finally {
             g.dispose();

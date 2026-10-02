@@ -57,7 +57,34 @@ class SeoControllerTest {
                 .contains("Gold II · 45 LP")
                 .contains("55 parties analysées, 55 % de victoires, KDA 3,1")
                 .contains("og:image\" content=\"https://premadelab.eu/api/seo/players/Le%20%3Cb%3ENom-EUW/card.png")
+                .contains("<link rel=\"canonical\" href=\"https://premadelab.eu/players/Le%20%3Cb%3ENom-EUW\" />")
+                .contains("hreflang=\"en\" href=\"https://premadelab.eu/en/players/Le%20%3Cb%3ENom-EUW\"")
                 .doesNotContain("<b>");
+    }
+
+    @Test
+    @DisplayName("la version anglaise se déclare canonique pour elle-même")
+    void headAnglais() throws Exception {
+        String html = mvc.perform(get("/seo/players/{slug}/head", "Le <b>Nom-EUW").param("lang", "/en")
+                        .header("X-Forwarded-Host", "premadelab.eu"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains("<link rel=\"canonical\" href=\"https://premadelab.eu/en/players/Le%20%3Cb%3ENom-EUW\" />")
+                .contains("games analysed");
+    }
+
+    @Test
+    @DisplayName("le plan du site liste les pages publiques dans les deux langues, et chaque profil une fois")
+    void planDuSite() throws Exception {
+        when(seo.trackedRiotIds(org.mockito.ArgumentMatchers.anyInt())).thenReturn(List.of("Le Nom#EUW"));
+
+        String xml = mvc.perform(get("/seo/sitemap.xml").header("X-Forwarded-Host", "premadelab.eu"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(xml).contains("<loc>https://premadelab.eu/en/presentation</loc>")
+                .contains("<loc>https://premadelab.eu/privacy</loc>")
+                .contains("<loc>https://premadelab.eu/players/Le%20Nom-EUW</loc>")
+                .doesNotContain("/en/players/");
     }
 
     @Test
@@ -88,7 +115,7 @@ class SeoControllerTest {
         String html = mvc.perform(get("/seo/players/{slug}/head", "Occupe-EUW"))
                 .andReturn().getResponse().getContentAsString();
 
-        assertThat(html).doesNotContain("noindex");
+        assertThat(html).doesNotContain("noindex").contains("rel=\"canonical\"");
     }
 
     @Test
