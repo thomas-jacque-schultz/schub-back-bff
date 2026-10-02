@@ -59,6 +59,7 @@ class SeoControllerTest {
                 .contains("og:image\" content=\"https://premadelab.eu/api/seo/players/Le%20%3Cb%3ENom-EUW/card.png")
                 .contains("<link rel=\"canonical\" href=\"https://premadelab.eu/players/Le%20%3Cb%3ENom-EUW\" />")
                 .contains("hreflang=\"en\" href=\"https://premadelab.eu/en/players/Le%20%3Cb%3ENom-EUW\"")
+                .doesNotContain("noindex")
                 .doesNotContain("<b>");
     }
 
@@ -85,6 +86,19 @@ class SeoControllerTest {
                 .contains("<loc>https://premadelab.eu/privacy</loc>")
                 .contains("<loc>https://premadelab.eu/players/Le%20Nom-EUW</loc>")
                 .doesNotContain("/en/players/");
+    }
+
+    @Test
+    @DisplayName("un profil sans partie relevée n'est pas indexé, et sa description reste propre")
+    void sansPartie() throws Exception {
+        PlayerSeoService.Summary vide = new PlayerSeoService.Summary("Vide", "EUW", "Vide-EUW", null, 0, null, null,
+                List.of());
+        when(seo.lookup("Vide-EUW")).thenReturn(new PlayerSeoService.Lookup(true, Optional.of(vide)));
+
+        String html = mvc.perform(get("/seo/players/{slug}/head", "Vide-EUW"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains("noindex").contains("content=\"Vide#EUW : non classé.\"");
     }
 
     @Test

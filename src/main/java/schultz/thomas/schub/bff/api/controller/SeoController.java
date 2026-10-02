@@ -84,7 +84,12 @@ public class SeoController {
                 + "/card.png";
 
         html.append(balise("title", texte(titre)))
-                .append(meta("name", "description", description))
+                .append(meta("name", "description", description));
+        // Sans partie relevée, la page n'a rien à montrer : un robot n'en retiendrait qu'une page creuse.
+        if (joueur.games() == 0) {
+            html.append("<meta name=\"robots\" content=\"noindex\" />");
+        }
+        html
                 .append(meta("property", "og:type", "profile"))
                 .append(meta("property", "og:locale", en ? "en_GB" : "fr_FR"))
                 .append(meta("property", "og:site_name", "PremadeLab"))
@@ -166,11 +171,10 @@ public class SeoController {
     }
 
     private static String description(Summary joueur, boolean en) {
-        StringBuilder texte = new StringBuilder(joueur.riotId());
         String rang = rang(joueur.solo(), en);
-        texte.append(en ? ": " : " : ").append(rang == null ? (en ? "unranked" : "non classé") : rang).append(". ");
-        texte.append(String.join(", ", chiffres(joueur, en))).append('.');
-        return texte.toString();
+        String texte = joueur.riotId() + (en ? ": " : " : ") + (rang == null ? (en ? "unranked" : "non classé") : rang) + ".";
+        List<String> chiffres = chiffres(joueur, en);
+        return chiffres.isEmpty() ? texte : texte + " " + String.join(", ", chiffres) + ".";
     }
 
     private static List<String> chiffres(Summary joueur, boolean en) {
