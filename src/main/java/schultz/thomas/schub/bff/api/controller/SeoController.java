@@ -33,6 +33,11 @@ public class SeoController {
 
     private static final MediaType HTML = new MediaType("text", "html", StandardCharsets.UTF_8);
     private static final Set<String> SANS_DIVISION = Set.of("MASTER", "GRANDMASTER", "CHALLENGER");
+    private static final List<String> PAGES = List.of("/", "/presentation", "/contact", "/terms", "/privacy");
+    // Une URL par profil, en français : la version anglaise est annoncée par le hreflang de la page.
+    private static final int PROFILS_MAX = 49_000;
+    private static final String OR = "#C9A227";
+    private static final String TEXTE = "#F2E9EE";
 
     private final PlayerSeoService seo;
     private final PlayerCardRenderer cards;
@@ -49,17 +54,25 @@ public class SeoController {
                                        HttpServletRequest request) {
         boolean en = anglais(lang);
         String origine = origine(request);
-        String chemin = (en ? "/en" : "") + "/players/" + UriUtils.encodePathSegment(slug, StandardCharsets.UTF_8);
         PlayerSeoService.Lookup recherche = seo.lookup(slug);
         Optional<Summary> resume = recherche.summary();
 
         StringBuilder html = new StringBuilder();
+        if (!recherche.found()) {
+            html.append(balise("title", texte(slug.replaceFirst("-([^-]*)$", "#$1")) + " | PremadeLab"))
+                    .append("<meta name=\"robots\" content=\"noindex\" />");
+            return fragment(html.toString());
+        }
+        String profil = "/players/" + UriUtils.encodePathSegment(resume.map(Summary::slug).orElse(slug),
+                StandardCharsets.UTF_8);
+        String chemin = (en ? "/en" : "") + profil;
+        html.append("<link rel=\"canonical\" href=\"").append(texte(origine + chemin)).append("\" />")
+                .append(alternative("fr", origine + profil))
+                .append(alternative("en", origine + "/en" + profil))
+                .append(alternative("x-default", origine + profil));
+        // Une panne passagère ne retire pas la page de l'index : titre seul, React complète au montage.
         if (resume.isEmpty()) {
             html.append(balise("title", texte(slug.replaceFirst("-([^-]*)$", "#$1")) + " | PremadeLab"));
-            // Seul un joueur introuvable sort de l'index : une panne passagère ne doit pas lui retirer sa page.
-            if (!recherche.found()) {
-                html.append("<meta name=\"robots\" content=\"noindex\" />");
-            }
             return fragment(html.toString());
         }
         Summary joueur = resume.get();
@@ -72,8 +85,8 @@ public class SeoController {
 
         html.append(balise("title", texte(titre)))
                 .append(meta("name", "description", description))
-                .append("<link rel=\"canonical\" href=\"").append(texte(origine + chemin)).append("\" />")
                 .append(meta("property", "og:type", "profile"))
+                .append(meta("property", "og:locale", en ? "en_GB" : "fr_FR"))
                 .append(meta("property", "og:site_name", "PremadeLab"))
                 .append(meta("property", "og:title", titre))
                 .append(meta("property", "og:description", description))
@@ -91,8 +104,8 @@ public class SeoController {
         boolean en = anglais(lang);
         Optional<Summary> resume = seo.summary(slug);
         StringBuilder html = new StringBuilder(
-                "<main style=\"max-width:960px;margin:48px auto;padding:0 16px;font-family:sans-serif;color:#E6EEF1\">")
-                .append("<p style=\"color:#3DD6B5\">PremadeLab</p>");
+                "<main style=\"max-width:960px;margin:48px auto;padding:0 16px;font-family:sans-serif;color:" + TEXTE + "\">")
+                .append("<p style=\"color:" + OR + "\">PremadeLab</p>");
         if (resume.isEmpty()) {
             html.append(balise("h1", texte(slug.replaceFirst("-([^-]*)$", "#$1"))));
         } else {
@@ -108,8 +121,10 @@ public class SeoController {
             }
             html.append("</ul>");
         }
-        html.append("<p><a style=\"color:#3DD6B5\" href=\"").append(en ? "/en" : "/").append("\">")
-                .append(en ? "Look up another player" : "Chercher un autre joueur").append("</a></p></main>");
+        html.append("<p><a style=\"color:" + OR + "\" href=\"").append(en ? "/en" : "/").append("\">")
+                .append(en ? "Look up another player" : "Chercher un autre joueur").append("</a> · ")
+                .append("<a style=\"color:" + OR + "\" href=\"").append(en ? "/en" : "").append("/presentation\">")
+                .append(en ? "What PremadeLab does" : "Ce que fait PremadeLab").append("</a></p></main>");
         return fragment(html.toString());
     }
 
@@ -129,8 +144,9 @@ public class SeoController {
         String origine = origine(request);
         StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
                 .append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
-        List<String> chemins = new ArrayList<>(List.of("/", "/presentation"));
-        for (String riotId : seo.trackedRiotIds()) {
+        List<String> chemins = new ArrayList<>(PAGES);
+        PAGES.forEach(page -> chemins.add("/en" + (page.equals("/") ? "" : page)));
+        for (String riotId : seo.trackedRiotIds(PROFILS_MAX)) {
             chemins.add("/players/" + UriUtils.encodePathSegment(riotId.replaceFirst("#([^#]*)$", "-$1"),
                     StandardCharsets.UTF_8));
         }
@@ -195,6 +211,10 @@ public class SeoController {
 
     private static String balise(String nom, String contenu) {
         return "<" + nom + ">" + contenu + "</" + nom + ">";
+    }
+
+    private static String alternative(String langue, String url) {
+        return "<link rel=\"alternate\" hreflang=\"" + langue + "\" href=\"" + texte(url) + "\" />";
     }
 
     private static String meta(String attribut, String nom, String contenu) {
