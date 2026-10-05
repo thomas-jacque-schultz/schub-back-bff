@@ -86,4 +86,16 @@ public class IngestLoadProxyController {
     public ResponseEntity<byte[]> updateHistoryWindow(@RequestBody(required = false) byte[] body) {
         return gateway.call(UPSTREAM, () -> core.updateHistoryWindow(gateway.parseBody(body)));
     }
+
+    @GetMapping("/seo-creators")
+    @PreAuthorize("hasAuthority('INGEST_MANAGE')")
+    public ResponseEntity<byte[]> seoCreators() {
+        return gateway.call(UPSTREAM, core::getSeoCreators);
+    }
+
+    @PutMapping("/seo-creators")
+    @PreAuthorize("hasAuthority('INGEST_MANAGE')")
+    public ResponseEntity<byte[]> replaceSeoCreators(@RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.replaceSeoCreators(gateway.parseBody(body)));
+    }
 }

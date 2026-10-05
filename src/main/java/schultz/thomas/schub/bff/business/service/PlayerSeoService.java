@@ -51,6 +51,9 @@ public class PlayerSeoService {
         }
     }
 
+    public record IndexedProfile(String riotId, boolean featured) {
+    }
+
     // Joueur introuvable : FOUND=false. Cœur ou Riot indisponibles : vide, et surtout pas « introuvable ».
     public record Lookup(boolean found, Optional<Summary> summary) {
     }
@@ -103,11 +106,12 @@ public class PlayerSeoService {
                 champions);
     }
 
-    public List<String> trackedRiotIds(int limit) {
+    public List<IndexedProfile> indexableProfiles(int limit) {
         try {
-            List<String> ids = new ArrayList<>();
-            objectMapper.readTree(core.getTrackedPlayers(limit)).forEach(id -> ids.add(id.asText()));
-            return ids;
+            List<IndexedProfile> profils = new ArrayList<>();
+            objectMapper.readTree(core.getIndexablePlayers(limit)).forEach(joueur -> profils.add(
+                    new IndexedProfile(joueur.path("riotId").asText(), joueur.path("featured").asBoolean())));
+            return profils;
         } catch (Exception ex) {
             log.warn("Plan du site sans profils : {}", ex.getMessage());
             return List.of();

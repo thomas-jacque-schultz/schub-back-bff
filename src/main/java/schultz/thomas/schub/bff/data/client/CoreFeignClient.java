@@ -86,6 +86,12 @@ public interface CoreFeignClient {
     @PutMapping("/ingest/history-window")
     byte[] updateHistoryWindow(@RequestBody Object body);
 
+    @GetMapping("/ingest/seo-creators")
+    byte[] getSeoCreators();
+
+    @PutMapping("/ingest/seo-creators")
+    byte[] replaceSeoCreators(@RequestBody Object body);
+
     @GetMapping("/me/stats/findings")
     byte[] getMyFindings(@RequestParam(value = "days", required = false) Integer days,
                          @RequestParam(value = "patches", required = false) Integer patches);
@@ -125,8 +131,8 @@ public interface CoreFeignClient {
     @PostMapping("/augur/patterns/{key}/rollback")
     byte[] rollbackPattern(@PathVariable("key") String key, @RequestBody Object body);
 
-    @GetMapping("/players/tracked")
-    byte[] getTrackedPlayers(@RequestParam("limit") int limit);
+    @GetMapping("/players/indexable")
+    byte[] getIndexablePlayers(@RequestParam("limit") int limit);
 
     @GetMapping("/players/search")
     byte[] searchPlayers(@RequestParam("q") String q, @RequestParam(value = "limit", required = false) Integer limit,
