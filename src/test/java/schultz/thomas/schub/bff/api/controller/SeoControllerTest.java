@@ -36,7 +36,7 @@ class SeoControllerTest {
                 new FrontsProperties.Front("premadelab", "https://premadelab.eu",
                         "https://premadelab.eu/api/auth/discord/callback", "/"))),
                 new DiscordOAuthProperties(null, null, null, null, null, null, null, true));
-        mvc = MockMvcBuilders.standaloneSetup(new SeoController(seo, new PlayerCardRenderer(), fronts)).build();
+        mvc = MockMvcBuilders.standaloneSetup(new SeoController(seo, new PlayerCardRenderer(), fronts, 20)).build();
         PlayerSeoService.Summary resume = new PlayerSeoService.Summary(
                 "Le <b>Nom", "EUW", "Le <b>Nom-EUW",
                 new PlayerSeoService.Rank("RANKED_SOLO_5x5", "GOLD", "II", 45, 30, 25),
@@ -77,15 +77,31 @@ class SeoControllerTest {
     @Test
     @DisplayName("le plan du site liste les pages publiques dans les deux langues, et chaque profil une fois")
     void planDuSite() throws Exception {
-        when(seo.trackedRiotIds(org.mockito.ArgumentMatchers.anyInt())).thenReturn(List.of("Le Nom#EUW"));
+        when(seo.indexableProfiles(org.mockito.ArgumentMatchers.anyInt())).thenReturn(List.of(
+                new PlayerSeoService.IndexedProfile("Le Nom#EUW", false),
+                new PlayerSeoService.IndexedProfile("Apex#EUW", true)));
 
         String xml = mvc.perform(get("/seo/sitemap.xml").header("X-Forwarded-Host", "premadelab.eu"))
                 .andReturn().getResponse().getContentAsString();
 
         assertThat(xml).contains("<loc>https://premadelab.eu/en/presentation</loc>")
                 .contains("<loc>https://premadelab.eu/privacy</loc>")
-                .contains("<loc>https://premadelab.eu/players/Le%20Nom-EUW</loc>")
+                .contains("<loc>https://premadelab.eu/players/Le%20Nom-EUW</loc></url>")
+                .contains("<loc>https://premadelab.eu/players/Apex-EUW</loc><priority>0.8</priority>")
                 .doesNotContain("/en/players/");
+    }
+
+    @Test
+    @DisplayName("un profil sous 20 parties n'est pas indexé")
+    void sousLeSeuil() throws Exception {
+        PlayerSeoService.Summary maigre = new PlayerSeoService.Summary("Maigre", "EUW", "Maigre-EUW", null, 19, 0.5,
+                2.0, List.of("Ahri"));
+        when(seo.lookup("Maigre-EUW")).thenReturn(new PlayerSeoService.Lookup(true, Optional.of(maigre)));
+
+        String html = mvc.perform(get("/seo/players/{slug}/head", "Maigre-EUW"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(html).contains("noindex");
     }
 
     @Test

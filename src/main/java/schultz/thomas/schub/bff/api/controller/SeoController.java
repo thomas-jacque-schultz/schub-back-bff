@@ -1,6 +1,7 @@
 package schultz.thomas.schub.bff.api.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,11 +43,15 @@ public class SeoController {
     private final PlayerSeoService seo;
     private final PlayerCardRenderer cards;
     private final FrontRegistry fronts;
+    private final int minIndexedGames;
 
-    public SeoController(PlayerSeoService seo, PlayerCardRenderer cards, FrontRegistry fronts) {
+    // Même seuil que riot.seo.min-games du connecteur, qui choisit les profils du plan du site.
+    public SeoController(PlayerSeoService seo, PlayerCardRenderer cards, FrontRegistry fronts,
+                         @Value("${seo.min-indexed-games:20}") int minIndexedGames) {
         this.seo = seo;
         this.cards = cards;
         this.fronts = fronts;
+        this.minIndexedGames = minIndexedGames;
     }
 
     @GetMapping("/players/{slug}/head")
@@ -85,8 +90,8 @@ public class SeoController {
 
         html.append(balise("title", texte(titre)))
                 .append(meta("name", "description", description));
-        // Sans partie relevée, la page n'a rien à montrer : un robot n'en retiendrait qu'une page creuse.
-        if (joueur.games() == 0) {
+        // Sous le seuil, la page est trop maigre : un robot jugerait le site sur des pages creuses (Schub#91).
+        if (joueur.games() < minIndexedGames) {
             html.append("<meta name=\"robots\" content=\"noindex\" />");
         }
         html
@@ -151,12 +156,15 @@ public class SeoController {
                 .append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
         List<String> chemins = new ArrayList<>(PAGES);
         PAGES.forEach(page -> chemins.add("/en" + (page.equals("/") ? "" : page)));
-        for (String riotId : seo.trackedRiotIds(PROFILS_MAX)) {
-            chemins.add("/players/" + UriUtils.encodePathSegment(riotId.replaceFirst("#([^#]*)$", "-$1"),
-                    StandardCharsets.UTF_8));
-        }
         for (String chemin : chemins) {
             xml.append("  <url><loc>").append(texte(origine + chemin)).append("</loc></url>\n");
+        }
+        for (PlayerSeoService.IndexedProfile profil : seo.indexableProfiles(PROFILS_MAX)) {
+            String chemin = "/players/" + UriUtils.encodePathSegment(
+                    profil.riotId().replaceFirst("#([^#]*)$", "-$1"), StandardCharsets.UTF_8);
+            xml.append("  <url><loc>").append(texte(origine + chemin)).append("</loc>")
+                    .append(profil.featured() ? "<priority>0.8</priority>" : "")
+                    .append("</url>\n");
         }
         xml.append("</urlset>\n");
         return ResponseEntity.ok()
