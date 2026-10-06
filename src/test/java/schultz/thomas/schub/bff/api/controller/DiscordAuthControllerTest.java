@@ -71,7 +71,7 @@ class DiscordAuthControllerTest {
         AuthCookies cookies = new AuthCookies(true);
 
         when(discord.randomUrlSafeValue()).thenReturn(ALEA);
-        when(discord.authorizationUrl(anyString(), anyString(), anyString()))
+        when(discord.authorizationUrl(anyString(), anyString(), anyString(), any()))
                 .thenReturn("https://discord.com/oauth2/authorize?client_id=x&scope=identify&state=" + STATE);
 
         mvc = MockMvcBuilders.standaloneSetup(new DiscordAuthController(
@@ -114,7 +114,7 @@ class DiscordAuthControllerTest {
         mvc.perform(get("/auth/discord/callback").param("code", "un-code"))
                 .andExpect(status().isBadRequest());
 
-        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString());
+        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString(), any());
     }
 
     @Test
@@ -126,7 +126,7 @@ class DiscordAuthControllerTest {
                         .cookie(new Cookie(AuthCookies.OAUTH_STATE, STATE)))
                 .andExpect(status().isBadRequest());
 
-        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString());
+        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString(), any());
     }
 
     @Test
@@ -147,7 +147,7 @@ class DiscordAuthControllerTest {
     @Test
     @DisplayName("un code refusé par Discord donne 502, pas une session")
     void callbackCodeInvalide() throws Exception {
-        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString(), any()))
                 .thenThrow(new DiscordOAuthService.DiscordOAuthException("Le code d'autorisation a été refusé"));
 
         var result = mvc.perform(get("/auth/discord/callback")
@@ -164,7 +164,7 @@ class DiscordAuthControllerTest {
     @Test
     @DisplayName("le cœur injoignable pendant le callback : 502 franc, pas un jeton sans permission")
     void callbackCoeurInjoignable() throws Exception {
-        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString(), any()))
                 .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", null));
         when(identityService.discordLogin(anyString(), any(), any())).thenReturn(Optional.empty());
 
@@ -182,7 +182,7 @@ class DiscordAuthControllerTest {
     @Test
     @DisplayName("un callback valide pose le jeton en cookie et renvoie le navigateur sur le site")
     void callbackNominal() throws Exception {
-        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString(), any()))
                 .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", "https://cdn/av.png"));
         when(identityService.discordLogin(DISCORD_ID, "pisel", "https://cdn/av.png"))
                 .thenReturn(Optional.of(identite()));
@@ -222,7 +222,7 @@ class DiscordAuthControllerTest {
 
         assertThat(result.getResponse().getHeaders("Set-Cookie"))
                 .noneMatch(c -> c.startsWith(AuthCookies.SESSION + "=ey"));
-        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString());
+        verify(discord, never()).exchangeCodeForProfile(anyString(), any(), anyString(), any());
     }
 
     private FrontsProperties deuxFronts() {
@@ -252,7 +252,8 @@ class DiscordAuthControllerTest {
                 .andExpect(status().isFound());
 
         verify(discord).authorizationUrl(org.mockito.ArgumentMatchers.eq(ALEA + ".premadelab"), anyString(),
-                org.mockito.ArgumentMatchers.eq("https://premadelab.eu/api/auth/discord/callback"));
+                org.mockito.ArgumentMatchers.eq("https://premadelab.eu/api/auth/discord/callback"),
+                org.mockito.ArgumentMatchers.eq("premadelab"));
     }
 
     @Test
@@ -260,7 +261,7 @@ class DiscordAuthControllerTest {
     void callbackRameneAuFrontDOrigine() throws Exception {
         construire(proprietes(true), deuxFronts());
         String state = ALEA + ".premadelab";
-        when(discord.exchangeCodeForProfile(anyString(), any(), anyString()))
+        when(discord.exchangeCodeForProfile(anyString(), any(), anyString(), any()))
                 .thenReturn(new DiscordOAuthService.DiscordProfile(DISCORD_ID, "pisel", null));
         when(identityService.discordLogin(anyString(), any(), any())).thenReturn(Optional.of(identite()));
 
@@ -272,7 +273,8 @@ class DiscordAuthControllerTest {
                 .andExpect(header().string("Location", "/?connecte=1"));
 
         verify(discord).exchangeCodeForProfile(anyString(), any(),
-                org.mockito.ArgumentMatchers.eq("https://premadelab.eu/api/auth/discord/callback"));
+                org.mockito.ArgumentMatchers.eq("https://premadelab.eu/api/auth/discord/callback"),
+                org.mockito.ArgumentMatchers.eq("premadelab"));
     }
 
     @Test

@@ -82,7 +82,8 @@ public class DiscordAuthController {
         return ResponseEntity.status(HttpStatus.FOUND)
                 .header(HttpHeaders.SET_COOKIE, cookies.oauthState(state))
                 .header(HttpHeaders.SET_COOKIE, cookies.oauthVerifier(verifier))
-                .location(URI.create(discord.authorizationUrl(state, verifier, front.get().redirectUri())))
+                .location(URI.create(discord.authorizationUrl(state, verifier, front.get().redirectUri(),
+                        front.get().key())))
                 .build();
     }
 
@@ -115,7 +116,8 @@ public class DiscordAuthController {
 
         DiscordOAuthService.DiscordProfile profile;
         try {
-            profile = discord.exchangeCodeForProfile(code, verifier.orElse(null), front.get().redirectUri());
+            profile = discord.exchangeCodeForProfile(code, verifier.orElse(null), front.get().redirectUri(),
+                    front.get().key());
         } catch (DiscordOAuthService.DiscordOAuthException ex) {
             return withCleared(ResponseEntity.status(HttpStatus.BAD_GATEWAY), cleared)
                     .body(Map.of("error", ex.getMessage()));

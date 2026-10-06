@@ -24,7 +24,8 @@ import java.util.stream.Stream;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({JwtProperties.class, DiscordOAuthProperties.class, FrontsProperties.class,
+@EnableConfigurationProperties({JwtProperties.class, DiscordOAuthProperties.class, DiscordOAuthClients.class,
+        FrontsProperties.class,
         ContactProperties.class})
 public class SecurityConfig {
 
