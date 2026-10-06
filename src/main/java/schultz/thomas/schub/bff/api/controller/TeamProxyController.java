@@ -62,6 +62,20 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.renameTeam(teamId, gateway.parseBody(body)));
     }
 
+    @PutMapping("/{teamId}/public")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> setPublic(@PathVariable String teamId,
+                                            @RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.setTeamPublic(teamId, gateway.parseBody(body)));
+    }
+
+    @PutMapping("/{teamId}/members/{memberId}/hidden")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> setMemberHidden(@PathVariable String teamId, @PathVariable String memberId,
+                                                  @RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.setTeamMemberHidden(teamId, memberId, gateway.parseBody(body)));
+    }
+
     @DeleteMapping("/{teamId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> delete(@PathVariable String teamId) {

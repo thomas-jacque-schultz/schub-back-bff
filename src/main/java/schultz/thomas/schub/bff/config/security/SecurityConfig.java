@@ -53,6 +53,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/game-servers/public-status").permitAll()
                         // La vitrine de PremadeLab : chercher un joueur et voir sa page, sans compte.
                         .requestMatchers(HttpMethod.GET, "/players/**").permitAll()
+                        // Une équipe dont le créateur a ouvert la page (Schub#98) ; privée, elle répond 404.
+                        .requestMatchers(HttpMethod.GET, "/public-teams/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/players/*/collect").permitAll()
                         // Agrégats par palier et par champion, sans donnée personnelle : la page publique d'un joueur les lit.
                         .requestMatchers(HttpMethod.GET, "/lol/references/**").permitAll()
