@@ -38,6 +38,18 @@ public class MeProxyController {
         return gateway.call(UPSTREAM, () -> core.updateMyDisplayName(gateway.parseBody(body)));
     }
 
+    @PutMapping("/session-summaries")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> updateSessionSummaries(@RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.updateMySessionSummaries(gateway.parseBody(body)));
+    }
+
+    @GetMapping("/session-summary")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> sessionSummary(@RequestParam String day) {
+        return gateway.call(UPSTREAM, () -> core.getMySessionSummary(day));
+    }
+
     @GetMapping("/stats")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> stats(@RequestParam(required = false) Integer days,
