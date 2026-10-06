@@ -229,8 +229,7 @@ public class SeoController {
                         .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic())
                         .contentType(MediaType.IMAGE_PNG)
                         .body(cards.render(t.name(), en ? "League of Legends premade" : "Premade League of Legends",
-                                // La carte tient trois lignes de chiffres, comme celle d’un joueur.
-                                chiffresEquipe(t, en).stream().limit(3).toList())))
+                                chiffresEquipe(t, en))))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

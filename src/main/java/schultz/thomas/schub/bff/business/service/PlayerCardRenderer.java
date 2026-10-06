@@ -44,6 +44,8 @@ public class PlayerCardRenderer {
         }
     }
 
+    static final int LIGNES_MAX = 3;
+
     public byte[] render(String riotId, String rankLine, List<String> figures) {
         BufferedImage image = new BufferedImage(LARGEUR, HAUTEUR, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
@@ -78,15 +80,16 @@ public class PlayerCardRenderer {
             }
 
             g.setColor(SECONDAIRE);
-            g.setFont(Polices.REGULAR.deriveFont(34f));
-            int y = 440;
-            for (String ligne : figures) {
+            // Trois lignes au plus entre le titre et le trait : une quatrième sortait du cadre.
+            g.setFont(Polices.REGULAR.deriveFont(30f));
+            int y = 425;
+            for (String ligne : figures.stream().limit(LIGNES_MAX).toList()) {
                 g.drawString(ligne, 110, y);
-                y += 50;
+                y += 44;
             }
 
             g.setColor(OR);
-            g.fillRect(110, HAUTEUR - 110, 80, 6);
+            g.fillRect(110, HAUTEUR - 90, 80, 6);
         } finally {
             g.dispose();
         }
