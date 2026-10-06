@@ -99,6 +99,9 @@ public interface CoreFeignClient {
     @GetMapping("/me/stats/games/{matchId}/findings")
     byte[] getMyGameFindings(@PathVariable("matchId") String matchId);
 
+    @GetMapping("/players/{riotId}/companions")
+    byte[] getPlayerCompanions(@PathVariable("riotId") String riotId);
+
     @GetMapping("/players/{riotId}/findings")
     byte[] getPlayerFindings(@PathVariable("riotId") String riotId,
                              @RequestParam(value = "days", required = false) Integer days,

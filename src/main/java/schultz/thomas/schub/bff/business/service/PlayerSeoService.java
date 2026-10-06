@@ -106,6 +106,19 @@ public class PlayerSeoService {
                 champions);
     }
 
+    // Pour la page servie aux robots : les Riot ID seulement, liens vers leurs profils (Schub#96).
+    public List<String> companions(String slug) {
+        try {
+            List<String> riotIds = new ArrayList<>();
+            objectMapper.readTree(core.getPlayerCompanions(slug)).path("companions")
+                    .forEach(compagnon -> riotIds.add(compagnon.path("riotId").asText()));
+            return riotIds;
+        } catch (Exception ex) {
+            log.debug("Compagnons indisponibles pour {} : {}", slug, ex.getMessage());
+            return List.of();
+        }
+    }
+
     public List<IndexedProfile> indexableProfiles(int limit) {
         try {
             List<IndexedProfile> profils = new ArrayList<>();
