@@ -178,6 +178,12 @@ public interface CoreFeignClient {
     @PutMapping("/me/display-name")
     byte[] updateMyDisplayName(@RequestBody Object body);
 
+    @PutMapping("/me/session-summaries")
+    byte[] updateMySessionSummaries(@RequestBody Object body);
+
+    @GetMapping("/me/session-summary")
+    byte[] getMySessionSummary(@RequestParam("day") String day);
+
     @GetMapping("/users/me/riot-account")
     byte[] getMyRiotAccount();
 
