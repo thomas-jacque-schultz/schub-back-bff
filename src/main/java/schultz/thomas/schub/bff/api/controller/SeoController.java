@@ -14,6 +14,7 @@ import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.util.UriUtils;
 import schultz.thomas.schub.bff.business.service.PlayerCardRenderer;
 import schultz.thomas.schub.bff.business.service.PlayerSeoService;
+import schultz.thomas.schub.bff.business.service.TeamSeoService;
 import schultz.thomas.schub.bff.business.service.PlayerSeoService.Rank;
 import schultz.thomas.schub.bff.business.service.PlayerSeoService.Summary;
 import schultz.thomas.schub.bff.config.security.FrontRegistry;
@@ -43,14 +44,16 @@ public class SeoController {
     private final PlayerSeoService seo;
     private final PlayerCardRenderer cards;
     private final FrontRegistry fronts;
+    private final TeamSeoService teams;
     private final int minIndexedGames;
 
     // Même seuil que riot.seo.min-games du connecteur, qui choisit les profils du plan du site.
-    public SeoController(PlayerSeoService seo, PlayerCardRenderer cards, FrontRegistry fronts,
+    public SeoController(PlayerSeoService seo, PlayerCardRenderer cards, FrontRegistry fronts, TeamSeoService teams,
                          @Value("${seo.min-indexed-games:20}") int minIndexedGames) {
         this.seo = seo;
         this.cards = cards;
         this.fronts = fronts;
+        this.teams = teams;
         this.minIndexedGames = minIndexedGames;
     }
 
@@ -160,6 +163,98 @@ public class SeoController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    // Équipe privée ou absente : titre seul et noindex ; React affiche la page ou la 404 au montage.
+    @GetMapping("/teams/{teamId}/head")
+    public ResponseEntity<String> teamHead(@PathVariable String teamId, @RequestParam(required = false) String lang,
+                                           HttpServletRequest request) {
+        boolean en = anglais(lang);
+        String origine = origine(request);
+        Optional<TeamSeoService.PublicTeam> equipe = teams.team(teamId);
+        if (equipe.isEmpty()) {
+            return fragment(balise("title", "PremadeLab") + "<meta name=\"robots\" content=\"noindex\" />");
+        }
+        TeamSeoService.PublicTeam t = equipe.get();
+        String page = "/teams/" + UriUtils.encodePathSegment(teamId, StandardCharsets.UTF_8);
+        String titre = t.name() + (en ? " — League of Legends premade | PremadeLab" : " — premade League of Legends | PremadeLab");
+        String description = descriptionEquipe(t, en);
+        String image = origine + "/api/seo/teams/" + UriUtils.encodePathSegment(teamId, StandardCharsets.UTF_8)
+                + "/card.png";
+        return fragment(new StringBuilder()
+                .append("<link rel=\"canonical\" href=\"").append(texte(origine + (en ? "/en" : "") + page)).append("\" />")
+                .append(alternative("fr", origine + page))
+                .append(alternative("en", origine + "/en" + page))
+                .append(alternative("x-default", origine + page))
+                .append(balise("title", texte(titre)))
+                .append(meta("name", "description", description))
+                .append(meta("property", "og:type", "website"))
+                .append(meta("property", "og:site_name", "PremadeLab"))
+                .append(meta("property", "og:title", titre))
+                .append(meta("property", "og:description", description))
+                .append(meta("property", "og:image", image))
+                .append(meta("property", "og:image:width", "1200"))
+                .append(meta("property", "og:image:height", "630"))
+                .append(meta("name", "twitter:card", "summary_large_image"))
+                .append(meta("name", "twitter:image", image))
+                .toString());
+    }
+
+    @GetMapping("/teams/{teamId}/body")
+    public ResponseEntity<String> teamBody(@PathVariable String teamId, @RequestParam(required = false) String lang) {
+        boolean en = anglais(lang);
+        StringBuilder html = new StringBuilder(
+                "<main style=\"max-width:960px;margin:48px auto;padding:0 16px;font-family:sans-serif;color:" + TEXTE + "\">")
+                .append("<p style=\"color:" + OR + "\">PremadeLab</p>");
+        teams.team(teamId).ifPresent(t -> {
+            html.append(balise("h1", texte(t.name())))
+                    .append(balise("p", texte(descriptionEquipe(t, en))))
+                    .append("<ul>");
+            for (String membre : t.members()) {
+                String lien = (en ? "/en" : "") + "/players/" + UriUtils.encodePathSegment(
+                        membre.replaceFirst("#([^#]*)$", "-$1"), StandardCharsets.UTF_8);
+                html.append("<li><a style=\"color:" + OR + "\" href=\"").append(texte(lien)).append("\">")
+                        .append(texte(membre)).append("</a></li>");
+            }
+            html.append("</ul>");
+        });
+        html.append("<p><a style=\"color:" + OR + "\" href=\"").append(en ? "/en" : "/").append("\">")
+                .append(en ? "Look up a player" : "Chercher un joueur").append("</a></p></main>");
+        return fragment(html.toString());
+    }
+
+    @GetMapping(value = "/teams/{teamId}/card.png", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> teamCard(@PathVariable String teamId, @RequestParam(required = false) String lang) {
+        boolean en = anglais(lang);
+        return teams.team(teamId)
+                .map(t -> ResponseEntity.ok()
+                        .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic())
+                        .contentType(MediaType.IMAGE_PNG)
+                        .body(cards.render(t.name(), en ? "League of Legends premade" : "Premade League of Legends",
+                                chiffresEquipe(t, en))))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private static String descriptionEquipe(TeamSeoService.PublicTeam t, boolean en) {
+        List<String> chiffres = chiffresEquipe(t, en);
+        return t.name() + (en ? ": " : " : ") + String.join(", ", chiffres) + ".";
+    }
+
+    private static List<String> chiffresEquipe(TeamSeoService.PublicTeam t, boolean en) {
+        List<String> lignes = new ArrayList<>();
+        lignes.add(en ? t.games() + " games together" : t.games() + " parties ensemble");
+        if (t.games() > 0) {
+            long pourcent = Math.round(100.0 * t.wins() / t.games());
+            lignes.add(en ? pourcent + "% win rate" : pourcent + " % de victoires");
+        }
+        if (t.duoA() != null) {
+            lignes.add((en ? "Best duo: " : "Meilleur duo : ") + t.duoA() + " + " + t.duoB());
+        }
+        if (!t.champions().isEmpty()) {
+            lignes.add((en ? "Champions: " : "Champions : ") + String.join(", ", t.champions().subList(0,
+                    Math.min(3, t.champions().size()))));
+        }
+        return lignes;
+    }
+
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemap(HttpServletRequest request) {
         String origine = origine(request);
@@ -169,6 +264,11 @@ public class SeoController {
         PAGES.forEach(page -> chemins.add("/en" + (page.equals("/") ? "" : page)));
         for (String chemin : chemins) {
             xml.append("  <url><loc>").append(texte(origine + chemin)).append("</loc></url>\n");
+        }
+        for (TeamSeoService.Listed equipe : teams.listed()) {
+            xml.append("  <url><loc>").append(texte(origine + "/teams/"
+                    + UriUtils.encodePathSegment(equipe.id(), StandardCharsets.UTF_8))).append("</loc>")
+                    .append("<priority>0.8</priority></url>\n");
         }
         for (PlayerSeoService.IndexedProfile profil : seo.indexableProfiles(PROFILS_MAX)) {
             String chemin = "/players/" + UriUtils.encodePathSegment(

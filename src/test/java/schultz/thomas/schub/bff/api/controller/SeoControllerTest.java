@@ -36,7 +36,8 @@ class SeoControllerTest {
                 new FrontsProperties.Front("premadelab", "https://premadelab.eu",
                         "https://premadelab.eu/api/auth/discord/callback", "/"))),
                 new DiscordOAuthProperties(null, null, null, null, null, null, null, true));
-        mvc = MockMvcBuilders.standaloneSetup(new SeoController(seo, new PlayerCardRenderer(), fronts, 20)).build();
+        mvc = MockMvcBuilders.standaloneSetup(new SeoController(seo, new PlayerCardRenderer(), fronts,
+                mock(schultz.thomas.schub.bff.business.service.TeamSeoService.class), 20)).build();
         PlayerSeoService.Summary resume = new PlayerSeoService.Summary(
                 "Le <b>Nom", "EUW", "Le <b>Nom-EUW",
                 new PlayerSeoService.Rank("RANKED_SOLO_5x5", "GOLD", "II", 45, 30, 25),

@@ -236,6 +236,19 @@ public interface CoreFeignClient {
     @PutMapping("/teams/{teamId}")
     byte[] renameTeam(@PathVariable("teamId") String teamId, @RequestBody Object body);
 
+    @PutMapping("/teams/{teamId}/public")
+    byte[] setTeamPublic(@PathVariable("teamId") String teamId, @RequestBody Object body);
+
+    @PutMapping("/teams/{teamId}/members/{memberId}/hidden")
+    byte[] setTeamMemberHidden(@PathVariable("teamId") String teamId, @PathVariable("memberId") String memberId,
+                               @RequestBody Object body);
+
+    @GetMapping("/public-teams")
+    byte[] getPublicTeams();
+
+    @GetMapping("/public-teams/{teamId}")
+    byte[] getPublicTeam(@PathVariable("teamId") String teamId);
+
     @DeleteMapping("/teams/{teamId}")
     void deleteTeam(@PathVariable("teamId") String teamId);
 
