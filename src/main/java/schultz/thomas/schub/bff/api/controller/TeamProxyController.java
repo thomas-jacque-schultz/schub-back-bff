@@ -76,6 +76,25 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.setTeamMemberHidden(teamId, memberId, gateway.parseBody(body)));
     }
 
+    @PutMapping("/{teamId}/training-slots")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> setTrainingSlots(@PathVariable String teamId,
+                                                   @RequestBody(required = false) byte[] body) {
+        return gateway.call(UPSTREAM, () -> core.setTrainingSlots(teamId, gateway.parseBody(body)));
+    }
+
+    @GetMapping("/{teamId}/sessions")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> sessions(@PathVariable String teamId, @RequestParam(required = false) Integer days) {
+        return gateway.call(UPSTREAM, () -> core.getTeamSessions(teamId, days));
+    }
+
+    @PostMapping("/{teamId}/sessions/detect")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> detectSessions(@PathVariable String teamId, @RequestParam String day) {
+        return gateway.call(UPSTREAM, () -> core.detectTeamSessions(teamId, day));
+    }
+
     @DeleteMapping("/{teamId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> delete(@PathVariable String teamId) {
