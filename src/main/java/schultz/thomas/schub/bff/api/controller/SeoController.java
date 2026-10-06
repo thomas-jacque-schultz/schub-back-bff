@@ -130,6 +130,17 @@ public class SeoController {
                 html.append(balise("li", texte(ligne)));
             }
             html.append("</ul>");
+            List<String> compagnons = seo.companions(slug);
+            if (!compagnons.isEmpty()) {
+                html.append(balise("h2", en ? "Often plays with" : "Joue souvent avec")).append("<ul>");
+                for (String compagnon : compagnons) {
+                    String lien = (en ? "/en" : "") + "/players/" + UriUtils.encodePathSegment(
+                            compagnon.replaceFirst("#([^#]*)$", "-$1"), StandardCharsets.UTF_8);
+                    html.append("<li><a style=\"color:" + OR + "\" href=\"").append(texte(lien)).append("\">")
+                            .append(texte(compagnon)).append("</a></li>");
+                }
+                html.append("</ul>");
+            }
         }
         html.append("<p><a style=\"color:" + OR + "\" href=\"").append(en ? "/en" : "/").append("\">")
                 .append(en ? "Look up another player" : "Chercher un autre joueur").append("</a> · ")

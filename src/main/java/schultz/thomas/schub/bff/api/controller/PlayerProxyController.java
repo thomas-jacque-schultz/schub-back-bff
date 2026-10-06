@@ -37,6 +37,11 @@ public class PlayerProxyController {
         return gateway.call(UPSTREAM, () -> core.getPlayer(riotId, days, patches, champions, light, null));
     }
 
+    @GetMapping("/companions")
+    public ResponseEntity<byte[]> companions(@PathVariable String riotId) {
+        return gateway.call(UPSTREAM, () -> core.getPlayerCompanions(riotId));
+    }
+
     @GetMapping("/games")
     public ResponseEntity<byte[]> games(@PathVariable String riotId,
                                         @RequestParam(required = false) Integer days,
