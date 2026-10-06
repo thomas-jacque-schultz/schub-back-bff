@@ -243,6 +243,16 @@ public interface CoreFeignClient {
     byte[] setTeamMemberHidden(@PathVariable("teamId") String teamId, @PathVariable("memberId") String memberId,
                                @RequestBody Object body);
 
+    @PutMapping("/teams/{teamId}/training-slots")
+    byte[] setTrainingSlots(@PathVariable("teamId") String teamId, @RequestBody Object body);
+
+    @GetMapping("/teams/{teamId}/sessions")
+    byte[] getTeamSessions(@PathVariable("teamId") String teamId,
+                           @RequestParam(value = "days", required = false) Integer days);
+
+    @PostMapping("/teams/{teamId}/sessions/detect")
+    byte[] detectTeamSessions(@PathVariable("teamId") String teamId, @RequestParam("day") String day);
+
     @GetMapping("/public-teams")
     byte[] getPublicTeams();
 
