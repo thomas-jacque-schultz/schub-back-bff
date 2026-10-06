@@ -29,6 +29,20 @@ class DiscordOAuthServiceTest {
             new DiscordOAuthService(properties, mock(RestTemplate.class));
 
     @Test
+    @DisplayName("premadelab.eu présente l'application PremadeLab ; un front sans client garde celle de Schub")
+    void clientParFront() {
+        DiscordOAuthService parFront = new DiscordOAuthService(properties,
+                new schultz.thomas.schub.bff.config.security.DiscordOAuthClients(java.util.Map.of("premadelab",
+                        new schultz.thomas.schub.bff.config.security.DiscordOAuthClients.Client("777", "secret-pl"))),
+                mock(RestTemplate.class));
+
+        assertThat(parFront.authorizationUrl("s", "v", "https://premadelab.eu/cb", "premadelab"))
+                .contains("client_id=777");
+        assertThat(parFront.authorizationUrl("s", "v", "https://schultz-thomas.fr/cb", "schub"))
+                .contains("client_id=449160985417089024");
+    }
+
+    @Test
     @DisplayName("l'URL d'autorisation ne demande que `identify`")
     void scopeIdentifySeul() {
         String url = URLDecoder.decode(

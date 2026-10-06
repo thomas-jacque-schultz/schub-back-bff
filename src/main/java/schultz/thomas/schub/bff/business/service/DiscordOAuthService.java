@@ -12,6 +12,8 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import schultz.thomas.schub.bff.config.security.DiscordOAuthClients;
 import schultz.thomas.schub.bff.config.security.DiscordOAuthProperties;
 
 import java.nio.charset.StandardCharsets;
@@ -33,9 +35,26 @@ public class DiscordOAuthService {
     private final DiscordOAuthProperties properties;
     private final RestTemplate restTemplate;
 
-    public DiscordOAuthService(DiscordOAuthProperties properties, RestTemplate discordRestTemplate) {
+    private final DiscordOAuthClients clients;
+
+    @Autowired
+    public DiscordOAuthService(DiscordOAuthProperties properties, DiscordOAuthClients clients,
+                               RestTemplate discordRestTemplate) {
         this.properties = properties;
+        this.clients = clients;
         this.restTemplate = discordRestTemplate;
+    }
+
+    public DiscordOAuthService(DiscordOAuthProperties properties, RestTemplate discordRestTemplate) {
+        this(properties, new DiscordOAuthClients(null), discordRestTemplate);
+    }
+
+    // Le client du front s'il est configuré, sinon celui de discord.oauth.
+    private DiscordOAuthClients.Client clientDe(String frontKey) {
+        DiscordOAuthClients.Client propre = frontKey == null ? null : clients.clients().get(frontKey);
+        return propre != null && propre.configured()
+                ? propre
+                : new DiscordOAuthClients.Client(properties.clientId(), properties.clientSecret());
     }
 
     public String randomUrlSafeValue() {
@@ -45,8 +64,12 @@ public class DiscordOAuthService {
     }
 
     public String authorizationUrl(String state, String codeVerifier, String redirectUri) {
+        return authorizationUrl(state, codeVerifier, redirectUri, null);
+    }
+
+    public String authorizationUrl(String state, String codeVerifier, String redirectUri, String frontKey) {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(properties.authorizationUri())
-                .queryParam("client_id", properties.clientId())
+                .queryParam("client_id", clientDe(frontKey).clientId())
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("response_type", "code")
                 .queryParam("scope", SCOPE)
@@ -69,14 +92,21 @@ public class DiscordOAuthService {
     }
 
     public DiscordProfile exchangeCodeForProfile(String code, String codeVerifier, String redirectUri) {
-        String accessToken = exchangeCode(code, codeVerifier, redirectUri);
+        return exchangeCodeForProfile(code, codeVerifier, redirectUri, null);
+    }
+
+    // L'identifiant Discord d'un utilisateur est le même pour toutes les applications : rien à migrer.
+    public DiscordProfile exchangeCodeForProfile(String code, String codeVerifier, String redirectUri,
+                                                 String frontKey) {
+        String accessToken = exchangeCode(code, codeVerifier, redirectUri, clientDe(frontKey));
         return fetchProfile(accessToken);
     }
 
-    private String exchangeCode(String code, String codeVerifier, String redirectUri) {
+    private String exchangeCode(String code, String codeVerifier, String redirectUri,
+                                DiscordOAuthClients.Client client) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("client_id", properties.clientId());
-        form.add("client_secret", properties.clientSecret());
+        form.add("client_id", client.clientId());
+        form.add("client_secret", client.clientSecret());
         form.add("grant_type", "authorization_code");
         form.add("code", code);
         form.add("redirect_uri", redirectUri);
