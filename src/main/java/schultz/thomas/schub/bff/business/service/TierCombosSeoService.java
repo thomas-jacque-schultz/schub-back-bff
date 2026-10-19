@@ -31,7 +31,7 @@ public class TierCombosSeoService {
         this.objectMapper = objectMapper;
     }
 
-    public record Line(List<String> champions, long games, long wins, boolean lowConfidence) {
+    public record Line(List<String> champions, long games, long wins) {
     }
 
     public record Page(String tier, String kind, long games, List<Line> lines) {
@@ -60,8 +60,7 @@ public class TierCombosSeoService {
             page.path("combos").forEach(combo -> {
                 List<String> champions = new ArrayList<>();
                 combo.path("champions").forEach(c -> champions.add(c.path("name").asText("?")));
-                lignes.add(new Line(champions, combo.path("games").asLong(), combo.path("wins").asLong(),
-                        combo.path("lowConfidence").asBoolean()));
+                lignes.add(new Line(champions, combo.path("games").asLong(), combo.path("wins").asLong()));
             });
             return Optional.of(new Page(tier, kind, page.path("games").asLong(), lignes));
         } catch (FeignException.NotFound absente) {
