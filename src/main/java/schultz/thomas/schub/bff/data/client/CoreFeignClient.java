@@ -172,6 +172,12 @@ public interface CoreFeignClient {
     @PutMapping("/premadelab/settings")
     byte[] updatePremadeLabSettings(@RequestBody Object body);
 
+    @GetMapping("/premadelab/session-summary-test")
+    byte[] getSessionSummaryTestSessions();
+
+    @PostMapping("/premadelab/session-summary-test")
+    byte[] sendSessionSummaryTest(@RequestParam("day") String day);
+
     @GetMapping("/me")
     byte[] getMe();
 
