@@ -265,6 +265,9 @@ public interface CoreFeignClient {
     @GetMapping("/public-teams/{teamId}")
     byte[] getPublicTeam(@PathVariable("teamId") String teamId);
 
+    @GetMapping("/tier-combos/{tier}/{kind}")
+    byte[] getTierCombos(@PathVariable("tier") String tier, @PathVariable("kind") String kind);
+
     @DeleteMapping("/teams/{teamId}")
     void deleteTeam(@PathVariable("teamId") String teamId);
 
