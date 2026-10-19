@@ -13,7 +13,8 @@ public record DiscordOAuthClients(Map<String, Client> clients) {
         clients = clients == null ? Map.of() : Map.copyOf(clients);
     }
 
-    public record Client(String clientId, String clientSecret) {
+    // userInstall : la connexion installe aussi l’application sur le compte, sans quoi son bot ne peut pas écrire en MP (Schub#100).
+    public record Client(String clientId, String clientSecret, boolean userInstall) {
 
         public boolean configured() {
             return clientId != null && !clientId.isBlank() && clientSecret != null && !clientSecret.isBlank();

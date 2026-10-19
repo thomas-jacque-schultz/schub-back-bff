@@ -27,6 +27,7 @@ import java.util.Map;
 public class DiscordOAuthService {
 
     public static final String SCOPE = "identify";
+    static final String SCOPE_INSTALLATION = "identify applications.commands";
 
     private static final Logger log = LoggerFactory.getLogger(DiscordOAuthService.class);
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -54,7 +55,7 @@ public class DiscordOAuthService {
         DiscordOAuthClients.Client propre = frontKey == null ? null : clients.clients().get(frontKey);
         return propre != null && propre.configured()
                 ? propre
-                : new DiscordOAuthClients.Client(properties.clientId(), properties.clientSecret());
+                : new DiscordOAuthClients.Client(properties.clientId(), properties.clientSecret(), false);
     }
 
     public String randomUrlSafeValue() {
@@ -68,12 +69,16 @@ public class DiscordOAuthService {
     }
 
     public String authorizationUrl(String state, String codeVerifier, String redirectUri, String frontKey) {
+        DiscordOAuthClients.Client client = clientDe(frontKey);
         UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(properties.authorizationUri())
-                .queryParam("client_id", clientDe(frontKey).clientId())
+                .queryParam("client_id", client.clientId())
                 .queryParam("redirect_uri", redirectUri)
                 .queryParam("response_type", "code")
-                .queryParam("scope", SCOPE)
+                .queryParam("scope", client.userInstall() ? SCOPE_INSTALLATION : SCOPE)
                 .queryParam("state", state);
+        if (client.userInstall()) {
+            builder.queryParam("integration_type", 1);
+        }
         if (properties.pkceEnabled()) {
             builder.queryParam("code_challenge", codeChallenge(codeVerifier))
                     .queryParam("code_challenge_method", "S256");

@@ -33,13 +33,16 @@ class DiscordOAuthServiceTest {
     void clientParFront() {
         DiscordOAuthService parFront = new DiscordOAuthService(properties,
                 new schultz.thomas.schub.bff.config.security.DiscordOAuthClients(java.util.Map.of("premadelab",
-                        new schultz.thomas.schub.bff.config.security.DiscordOAuthClients.Client("777", "secret-pl"))),
+                        new schultz.thomas.schub.bff.config.security.DiscordOAuthClients.Client("777", "secret-pl", true))),
                 mock(RestTemplate.class));
 
-        assertThat(parFront.authorizationUrl("s", "v", "https://premadelab.eu/cb", "premadelab"))
-                .contains("client_id=777");
+        assertThat(URLDecoder.decode(parFront.authorizationUrl("s", "v", "https://premadelab.eu/cb", "premadelab"),
+                StandardCharsets.UTF_8))
+                .contains("client_id=777").contains("scope=identify applications.commands")
+                .contains("integration_type=1");
         assertThat(parFront.authorizationUrl("s", "v", "https://schultz-thomas.fr/cb", "schub"))
-                .contains("client_id=449160985417089024");
+                .contains("client_id=449160985417089024").contains("scope=identify&")
+                .doesNotContain("integration_type");
     }
 
     @Test
