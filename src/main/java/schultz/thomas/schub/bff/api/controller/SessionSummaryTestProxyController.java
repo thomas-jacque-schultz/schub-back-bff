@@ -32,7 +32,7 @@ public class SessionSummaryTestProxyController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('INGEST_MANAGE')")
-    public ResponseEntity<byte[]> send(@RequestParam String day) {
-        return gateway.call(UPSTREAM, () -> core.sendSessionSummaryTest(day));
+    public ResponseEntity<byte[]> send(@RequestParam String day, @RequestParam(defaultValue = "true") boolean send) {
+        return gateway.call(UPSTREAM, () -> core.sendSessionSummaryTest(day, send));
     }
 }
