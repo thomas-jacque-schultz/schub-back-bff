@@ -1,6 +1,5 @@
 package schultz.thomas.schub.bff.business.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
 import org.slf4j.Logger;
@@ -13,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.Map;
 import java.util.function.Supplier;
 
 @Service
@@ -38,6 +36,8 @@ public class UpstreamGateway {
                     .body(call.get());
         } catch (FeignException ex) {
             return relayError(ex);
+        } catch (InvalidBodyException ex) {
+            return invalidBody();
         } catch (Exception ex) {
             return unreachable(upstream, ex);
         }
@@ -49,21 +49,35 @@ public class UpstreamGateway {
             return ResponseEntity.noContent().build();
         } catch (FeignException ex) {
             return relayError(ex);
+        } catch (InvalidBodyException ex) {
+            return invalidBody();
         } catch (Exception ex) {
             return unreachable(upstream, ex);
         }
     }
 
-    // Repassé en Map pour que Feign le réémette à l'identique sans que le BFF connaisse le contrat du cœur.
+    // Relu en Map ou en List pour que Feign le réémette à l'identique sans que le BFF connaisse le contrat du cœur.
     public Object parseBody(@Nullable byte[] body) {
         if (body == null || body.length == 0) {
             return Collections.emptyMap();
         }
         try {
-            return objectMapper.readValue(body, new TypeReference<Map<String, Object>>() {});
+            return objectMapper.readValue(body, Object.class);
         } catch (Exception ex) {
-            throw new IllegalArgumentException("Corps de requête JSON invalide", ex);
+            throw new InvalidBodyException(ex);
         }
+    }
+
+    static class InvalidBodyException extends RuntimeException {
+        InvalidBodyException(Throwable cause) {
+            super("Corps de requête JSON invalide", cause);
+        }
+    }
+
+    private ResponseEntity<byte[]> invalidBody() {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"error\":\"Invalid JSON body\"}".getBytes(StandardCharsets.UTF_8));
     }
 
     private ResponseEntity<byte[]> relayError(FeignException ex) {
