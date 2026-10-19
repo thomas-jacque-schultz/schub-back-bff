@@ -15,6 +15,7 @@ import org.springframework.web.util.UriUtils;
 import schultz.thomas.schub.bff.business.service.PlayerCardRenderer;
 import schultz.thomas.schub.bff.business.service.PlayerSeoService;
 import schultz.thomas.schub.bff.business.service.TeamSeoService;
+import schultz.thomas.schub.bff.business.service.TierCombosSeoService;
 import schultz.thomas.schub.bff.business.service.PlayerSeoService.Rank;
 import schultz.thomas.schub.bff.business.service.PlayerSeoService.Summary;
 import schultz.thomas.schub.bff.config.security.FrontRegistry;
@@ -25,6 +26,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -45,15 +47,18 @@ public class SeoController {
     private final PlayerCardRenderer cards;
     private final FrontRegistry fronts;
     private final TeamSeoService teams;
+    private final TierCombosSeoService combos;
     private final int minIndexedGames;
 
     // Même seuil que riot.seo.min-games du connecteur, qui choisit les profils du plan du site.
     public SeoController(PlayerSeoService seo, PlayerCardRenderer cards, FrontRegistry fronts, TeamSeoService teams,
+                         TierCombosSeoService combos,
                          @Value("${seo.min-indexed-games:20}") int minIndexedGames) {
         this.seo = seo;
         this.cards = cards;
         this.fronts = fronts;
         this.teams = teams;
+        this.combos = combos;
         this.minIndexedGames = minIndexedGames;
     }
 
@@ -233,6 +238,109 @@ public class SeoController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    private static final Map<String, String[]> PALIERS = Map.of(
+            "IRON_BRONZE", new String[]{"Fer–Bronze", "Iron–Bronze"},
+            "SILVER_GOLD", new String[]{"Argent–Or", "Silver–Gold"},
+            "PLATINUM_EMERALD", new String[]{"Platine–Émeraude", "Platinum–Emerald"},
+            "DIAMOND", new String[]{"Diamant", "Diamond"},
+            "MASTER_PLUS", new String[]{"Maître et au-delà", "Master and above"});
+    private static final Map<String, String[]> TYPES = Map.of(
+            "ADC_SUP", new String[]{"duos bas (tireur + support)", "bot lane duos (ADC + support)"},
+            "JGL_MID", new String[]{"duos jungle + milieu", "jungle + mid duos"},
+            "JGL_MID_SUP", new String[]{"trios jungle, milieu et support", "jungle, mid and support trios"});
+
+    private static String libelle(Map<String, String[]> libelles, String code, boolean en) {
+        return libelles.get(code)[en ? 1 : 0];
+    }
+
+    private static String cheminCombos(String tier, String kind) {
+        return "/combos/" + TierCombosSeoService.slug(tier) + "/" + TierCombosSeoService.slug(kind);
+    }
+
+    private static String titreCombos(String tier, String kind, boolean en) {
+        return (en ? "Best " : "Meilleurs ") + libelle(TYPES, kind, en) + (en ? " in " : " en ")
+                + libelle(PALIERS, tier, en) + " — League of Legends | PremadeLab";
+    }
+
+    // Page inconnue : titre seul et noindex ; React affiche la 404 au montage.
+    @GetMapping("/combos/{tier}/{kind}/head")
+    public ResponseEntity<String> combosHead(@PathVariable String tier, @PathVariable String kind,
+                                             @RequestParam(required = false) String lang, HttpServletRequest request) {
+        boolean en = anglais(lang);
+        String palier = TierCombosSeoService.code(tier);
+        String type = TierCombosSeoService.code(kind);
+        if (!TierCombosSeoService.known(palier, type)) {
+            return fragment(balise("title", "PremadeLab") + "<meta name=\"robots\" content=\"noindex\" />");
+        }
+        String origine = origine(request);
+        String page = cheminCombos(palier, type);
+        String titre = titreCombos(palier, type, en);
+        String description = en
+                ? "The " + libelle(TYPES, type, en) + " that win most in " + libelle(PALIERS, palier, en)
+                + ", ranked by the lower bound of their win rate. Updated every day."
+                : "Les " + libelle(TYPES, type, en) + " qui gagnent le plus en " + libelle(PALIERS, palier, en)
+                + ", classés par la borne basse de leur taux de victoire. Mis à jour chaque jour.";
+        return fragment(new StringBuilder()
+                .append("<link rel=\"canonical\" href=\"").append(texte(origine + (en ? "/en" : "") + page)).append("\" />")
+                .append(alternative("fr", origine + page))
+                .append(alternative("en", origine + "/en" + page))
+                .append(alternative("x-default", origine + page))
+                .append(balise("title", texte(titre)))
+                .append(meta("name", "description", description))
+                .append(meta("property", "og:type", "website"))
+                .append(meta("property", "og:site_name", "PremadeLab"))
+                .append(meta("property", "og:title", titre))
+                .append(meta("property", "og:description", description))
+                .toString());
+    }
+
+    @GetMapping("/combos/{tier}/{kind}/body")
+    public ResponseEntity<String> combosBody(@PathVariable String tier, @PathVariable String kind,
+                                             @RequestParam(required = false) String lang) {
+        boolean en = anglais(lang);
+        String palier = TierCombosSeoService.code(tier);
+        String type = TierCombosSeoService.code(kind);
+        String prefixe = en ? "/en" : "";
+        StringBuilder html = new StringBuilder(
+                "<main style=\"max-width:960px;margin:48px auto;padding:0 16px;font-family:sans-serif;color:" + TEXTE + "\">")
+                .append("<p style=\"color:" + OR + "\">PremadeLab</p>");
+        if (TierCombosSeoService.known(palier, type)) {
+            html.append(balise("h1", texte(titreCombos(palier, type, en).replace(" | PremadeLab", ""))));
+            combos.page(palier, type).ifPresent(page -> {
+                html.append(balise("p", texte(en
+                        ? page.games() + " team sides counted in " + libelle(PALIERS, palier, en) + "."
+                        : page.games() + " camps comptés en " + libelle(PALIERS, palier, en) + ".")));
+                html.append("<ol>");
+                for (TierCombosSeoService.Line ligne : page.lines()) {
+                    long pourcent = Math.round(100.0 * ligne.wins() / ligne.games());
+                    html.append(balise("li", texte(String.join(" + ", ligne.champions()) + " — "
+                            + (en ? pourcent + "% wins over " + ligne.games() + " games"
+                            : pourcent + " % de victoires sur " + ligne.games() + " parties")
+                            + (ligne.lowConfidence() ? (en ? " (low confidence)" : " (confiance insuffisante)") : ""))));
+                }
+                html.append("</ol>");
+            });
+            html.append("<ul>");
+            for (String autre : TierCombosSeoService.PALIERS) {
+                if (!autre.equals(palier)) {
+                    html.append("<li><a style=\"color:" + OR + "\" href=\"").append(texte(prefixe + cheminCombos(autre, type)))
+                            .append("\">").append(texte(libelle(PALIERS, autre, en))).append("</a></li>");
+                }
+            }
+            for (String autre : TierCombosSeoService.TYPES) {
+                if (!autre.equals(type)) {
+                    html.append("<li><a style=\"color:" + OR + "\" href=\"").append(texte(prefixe + cheminCombos(palier, autre)))
+                            .append("\">").append(texte(libelle(TYPES, autre, en))).append("</a></li>");
+                }
+            }
+            html.append("</ul>");
+        }
+        html.append("<p><a style=\"color:" + OR + "\" href=\"").append(en ? "/en" : "/").append("\">")
+                .append(en ? "And with your premade? Look up a player" : "Et avec ton premade ? Cherche un joueur")
+                .append("</a></p></main>");
+        return fragment(html.toString());
+    }
+
     private static String descriptionEquipe(TeamSeoService.PublicTeam t, boolean en) {
         List<String> chiffres = chiffresEquipe(t, en);
         return t.name() + (en ? ": " : " : ") + String.join(", ", chiffres) + ".";
@@ -264,6 +372,12 @@ public class SeoController {
         PAGES.forEach(page -> chemins.add("/en" + (page.equals("/") ? "" : page)));
         for (String chemin : chemins) {
             xml.append("  <url><loc>").append(texte(origine + chemin)).append("</loc></url>\n");
+        }
+        for (String palier : TierCombosSeoService.PALIERS) {
+            for (String type : TierCombosSeoService.TYPES) {
+                xml.append("  <url><loc>").append(texte(origine + cheminCombos(palier, type))).append("</loc>")
+                        .append("<changefreq>daily</changefreq><priority>0.8</priority></url>\n");
+            }
         }
         for (TeamSeoService.Listed equipe : teams.listed()) {
             xml.append("  <url><loc>").append(texte(origine + "/teams/"

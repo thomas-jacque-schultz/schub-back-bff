@@ -7,6 +7,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import schultz.thomas.schub.bff.business.service.PlayerCardRenderer;
 import schultz.thomas.schub.bff.business.service.PlayerSeoService;
+import schultz.thomas.schub.bff.business.service.TierCombosSeoService;
 import schultz.thomas.schub.bff.config.security.DiscordOAuthProperties;
 import schultz.thomas.schub.bff.config.security.FrontRegistry;
 import schultz.thomas.schub.bff.config.security.FrontsProperties;
@@ -29,15 +30,18 @@ class SeoControllerTest {
     private PlayerSeoService seo;
     private MockMvc mvc;
 
+    private TierCombosSeoService combos;
+
     @BeforeEach
     void setUp() {
         seo = mock(PlayerSeoService.class);
+        combos = mock(TierCombosSeoService.class);
         FrontRegistry fronts = new FrontRegistry(new FrontsProperties(List.of(
                 new FrontsProperties.Front("premadelab", "https://premadelab.eu",
                         "https://premadelab.eu/api/auth/discord/callback", "/"))),
                 new DiscordOAuthProperties(null, null, null, null, null, null, null, true));
         mvc = MockMvcBuilders.standaloneSetup(new SeoController(seo, new PlayerCardRenderer(), fronts,
-                mock(schultz.thomas.schub.bff.business.service.TeamSeoService.class), 20)).build();
+                mock(schultz.thomas.schub.bff.business.service.TeamSeoService.class), combos, 20)).build();
         PlayerSeoService.Summary resume = new PlayerSeoService.Summary(
                 "Le <b>Nom", "EUW", "Le <b>Nom-EUW",
                 new PlayerSeoService.Rank("RANKED_SOLO_5x5", "GOLD", "II", 45, 30, 25),
@@ -62,6 +66,35 @@ class SeoControllerTest {
                 .contains("hreflang=\"en\" href=\"https://premadelab.eu/en/players/Le%20%3Cb%3ENom-EUW\"")
                 .doesNotContain("noindex")
                 .doesNotContain("<b>");
+    }
+
+    @Test
+    @DisplayName("une page de combos par palier se lit sans JavaScript, avec ses liens vers les autres paliers (Schub#112)")
+    void combosParPalier() throws Exception {
+        when(combos.page("SILVER_GOLD", "ADC_SUP")).thenReturn(java.util.Optional.of(new TierCombosSeoService.Page(
+                "SILVER_GOLD", "ADC_SUP", 1200, List.of(
+                new TierCombosSeoService.Line(List.of("Ashe", "Thresh"), 40, 26, false)))));
+
+        String head = mvc.perform(get("/seo/combos/{tier}/{kind}/head", "silver-gold", "adc-sup")
+                        .header("X-Forwarded-Host", "premadelab.eu"))
+                .andReturn().getResponse().getContentAsString();
+        String body = mvc.perform(get("/seo/combos/{tier}/{kind}/body", "silver-gold", "adc-sup"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(head).contains("<title>Meilleurs duos bas (tireur + support) en Argent–Or — League of Legends | PremadeLab</title>")
+                .contains("<link rel=\"canonical\" href=\"https://premadelab.eu/combos/silver-gold/adc-sup\" />");
+        assertThat(body).contains("<li>Ashe + Thresh — 65 % de victoires sur 40 parties</li>")
+                .contains("href=\"/combos/diamond/adc-sup\"")
+                .contains("href=\"/combos/silver-gold/jgl-mid\"");
+    }
+
+    @Test
+    @DisplayName("une page de combos inconnue n'est pas indexée")
+    void combosInconnus() throws Exception {
+        String head = mvc.perform(get("/seo/combos/{tier}/{kind}/head", "bronze", "adc-sup"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(head).contains("noindex");
     }
 
     @Test
