@@ -176,7 +176,7 @@ public interface CoreFeignClient {
     byte[] getSessionSummaryTestSessions();
 
     @PostMapping("/premadelab/session-summary-test")
-    byte[] sendSessionSummaryTest(@RequestParam("day") String day);
+    byte[] sendSessionSummaryTest(@RequestParam("day") String day, @RequestParam("send") boolean send);
 
     @GetMapping("/me")
     byte[] getMe();
