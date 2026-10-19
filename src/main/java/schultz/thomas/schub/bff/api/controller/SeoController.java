@@ -315,8 +315,7 @@ public class SeoController {
                     long pourcent = Math.round(100.0 * ligne.wins() / ligne.games());
                     html.append(balise("li", texte(String.join(" + ", ligne.champions()) + " — "
                             + (en ? pourcent + "% wins over " + ligne.games() + " games"
-                            : pourcent + " % de victoires sur " + ligne.games() + " parties")
-                            + (ligne.lowConfidence() ? (en ? " (low confidence)" : " (confiance insuffisante)") : ""))));
+                            : pourcent + " % de victoires sur " + ligne.games() + " parties"))));
                 }
                 html.append("</ol>");
             });

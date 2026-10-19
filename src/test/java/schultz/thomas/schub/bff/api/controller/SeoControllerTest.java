@@ -73,7 +73,7 @@ class SeoControllerTest {
     void combosParPalier() throws Exception {
         when(combos.page("SILVER_GOLD", "ADC_SUP")).thenReturn(java.util.Optional.of(new TierCombosSeoService.Page(
                 "SILVER_GOLD", "ADC_SUP", 1200, List.of(
-                new TierCombosSeoService.Line(List.of("Ashe", "Thresh"), 40, 26, false)))));
+                new TierCombosSeoService.Line(List.of("Ashe", "Thresh"), 40, 26)))));
 
         String head = mvc.perform(get("/seo/combos/{tier}/{kind}/head", "silver-gold", "adc-sup")
                         .header("X-Forwarded-Host", "premadelab.eu"))
