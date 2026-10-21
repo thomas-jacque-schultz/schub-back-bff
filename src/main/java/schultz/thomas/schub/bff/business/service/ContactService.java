@@ -98,7 +98,8 @@ public class ContactService {
 
         DirectMessageRequest payload = new DirectMessageRequest(
                 properties.recipientId(),
-                "Message depuis " + (site == null || site.isBlank() ? "le site" : site),
+                ContactSubject.of(request.subject()).label() + " · message depuis "
+                        + (site == null || site.isBlank() ? "le site" : site),
                 """
                         **De** : %s
                         **Adresse** : %s

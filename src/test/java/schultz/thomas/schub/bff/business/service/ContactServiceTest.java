@@ -67,7 +67,7 @@ class ContactServiceTest {
     }
 
     private static ContactRequest request(String website) {
-        return new ContactRequest("Camille", "camille@example.org", VALID_MESSAGE, website, null);
+        return new ContactRequest("Camille", "camille@example.org", VALID_MESSAGE, website, null, "MINI_GAMES");
     }
 
     @BeforeEach
@@ -85,6 +85,17 @@ class ContactServiceTest {
         assertThat(connector.sent).hasSize(1);
         assertThat(connector.sent.get(0).recipientId()).isEqualTo("227883780512153610");
         assertThat(connector.sent.get(0).body()).contains("camille@example.org");
+        assertThat(connector.sent.get(0).title()).startsWith("Mini-jeux · ");
+    }
+
+    @Test
+    @DisplayName("un sujet absent ou inconnu devient « Autre », sans refuser le message")
+    void unknownSubject() {
+        for (String subject : new String[]{null, "", "SPAM"}) {
+            ContactRequest sansSujet = new ContactRequest("Camille", "camille@example.org", VALID_MESSAGE, "", null, subject);
+            assertThat(service.submit(sansSujet, "203.0.113.20")).isEqualTo(ContactService.Outcome.DELIVERED);
+        }
+        assertThat(connector.sent).extracting(DirectMessageRequest::title).allMatch(title -> title.startsWith("Autre · "));
     }
 
     @Test
@@ -98,7 +109,7 @@ class ContactServiceTest {
     @Test
     @DisplayName("une adresse mal formée est refusée")
     void malformedEmail() {
-        ContactRequest bad = new ContactRequest("Camille", "pas-une-adresse", VALID_MESSAGE, "", null);
+        ContactRequest bad = new ContactRequest("Camille", "pas-une-adresse", VALID_MESSAGE, "", null, "MINI_GAMES");
         assertThat(service.submit(bad, "203.0.113.12")).isEqualTo(ContactService.Outcome.REJECTED);
         assertThat(connector.sent).isEmpty();
     }
@@ -106,7 +117,7 @@ class ContactServiceTest {
     @Test
     @DisplayName("un message trop court est refusé")
     void tooShort() {
-        ContactRequest bad = new ContactRequest("Camille", "camille@example.org", "salut", "", null);
+        ContactRequest bad = new ContactRequest("Camille", "camille@example.org", "salut", "", null, "MINI_GAMES");
         assertThat(service.submit(bad, "203.0.113.13")).isEqualTo(ContactService.Outcome.REJECTED);
     }
 

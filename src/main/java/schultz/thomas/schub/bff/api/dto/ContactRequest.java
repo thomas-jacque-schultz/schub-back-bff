@@ -5,6 +5,7 @@ public record ContactRequest(
         String email,
         String message,
         String website,
-        String turnstileToken
+        String turnstileToken,
+        String subject
 ) {
 }
