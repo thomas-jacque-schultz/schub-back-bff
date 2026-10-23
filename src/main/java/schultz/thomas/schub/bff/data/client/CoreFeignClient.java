@@ -286,6 +286,15 @@ public interface CoreFeignClient {
     @DeleteMapping("/quiz/questions/{id}")
     void deleteQuizQuestion(@PathVariable("id") String id);
 
+    @PutMapping("/queue-killer/presence")
+    void signalQueueKillerPresence(@RequestBody Object body);
+
+    @DeleteMapping("/queue-killer/presence/{game}/{room}")
+    void leaveQueueKillerRoom(@PathVariable("game") String game, @PathVariable("room") String room);
+
+    @GetMapping("/queue-killer/premade-rooms")
+    byte[] getPremadeRooms();
+
     @DeleteMapping("/teams/{teamId}")
     void deleteTeam(@PathVariable("teamId") String teamId);
 
