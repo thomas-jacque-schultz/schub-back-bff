@@ -274,6 +274,18 @@ public interface CoreFeignClient {
     @GetMapping("/tier-combos/{tier}/{kind}")
     byte[] getTierCombos(@PathVariable("tier") String tier, @PathVariable("kind") String kind);
 
+    @GetMapping("/quiz/questions")
+    byte[] getQuizQuestions();
+
+    @GetMapping("/quiz/questions/all")
+    byte[] getAllQuizQuestions();
+
+    @PutMapping("/quiz/questions/{id}")
+    byte[] saveQuizQuestion(@PathVariable("id") String id, @RequestBody Object body);
+
+    @DeleteMapping("/quiz/questions/{id}")
+    void deleteQuizQuestion(@PathVariable("id") String id);
+
     @DeleteMapping("/teams/{teamId}")
     void deleteTeam(@PathVariable("teamId") String teamId);
 
