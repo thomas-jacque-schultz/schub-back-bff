@@ -283,6 +283,9 @@ public interface CoreFeignClient {
     @PutMapping("/quiz/questions/{id}")
     byte[] saveQuizQuestion(@PathVariable("id") String id, @RequestBody Object body);
 
+    @DeleteMapping("/quiz/questions/{id}")
+    void deleteQuizQuestion(@PathVariable("id") String id);
+
     @DeleteMapping("/teams/{teamId}")
     void deleteTeam(@PathVariable("teamId") String teamId);
 
