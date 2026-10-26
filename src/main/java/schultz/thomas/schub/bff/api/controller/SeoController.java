@@ -39,8 +39,10 @@ public class SeoController {
     private static final Set<String> SANS_DIVISION = Set.of("MASTER", "GRANDMASTER", "CHALLENGER");
     private static final List<String> PAGES = List.of("/", "/presentation", "/ruler", "/contact", "/terms",
             "/privacy");
-    // Une URL par profil, en français : la version anglaise est annoncée par le hreflang de la page.
-    private static final int PROFILS_MAX = 49_000;
+    // Une URL par profil, en français : la version anglaise est annoncée par le hreflang de la page. Les profils ont
+    // leur fichier, plafonné à la limite d'un plan de site (et du connecteur, qui les sert du plus utile au moins utile).
+    private static final int PROFILS_MAX = 50_000;
+    private static final String ENTETE_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     private static final String OR = "#C9A227";
     private static final String TEXTE = "#F2E9EE";
 
@@ -363,15 +365,33 @@ public class SeoController {
         return lignes;
     }
 
+    // Le plan du site est un index : les pages de contenu d'un côté, les profils de l'autre. La Search Console suit
+    // ainsi l'indexation de chaque fichier, et la dizaine de pages de contenu ne se perd plus parmi les profils.
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemap(HttpServletRequest request) {
         String origine = origine(request);
-        StringBuilder xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-                .append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
-        List<String> chemins = new ArrayList<>(PAGES);
-        PAGES.forEach(page -> chemins.add("/en" + (page.equals("/") ? "" : page)));
-        for (String chemin : chemins) {
-            xml.append("  <url><loc>").append(texte(origine + chemin)).append("</loc></url>\n");
+        StringBuilder xml = new StringBuilder(ENTETE_XML)
+                .append("<sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+        for (String fichier : List.of("/sitemap-pages.xml", "/sitemap-players.xml")) {
+            xml.append("  <sitemap><loc>").append(texte(origine + fichier)).append("</loc></sitemap>\n");
+        }
+        return plan(xml.append("</sitemapindex>\n"));
+    }
+
+    // Chaque page publique dans ses deux langues, chacune annonçant l'autre : Google sert à chacun la sienne.
+    @GetMapping(value = "/sitemap-pages.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> sitemapPages(HttpServletRequest request) {
+        String origine = origine(request);
+        StringBuilder xml = new StringBuilder(ENTETE_XML)
+                .append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"")
+                .append(" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n");
+        for (String page : PAGES) {
+            String fr = origine + page;
+            String en = origine + "/en" + (page.equals("/") ? "" : page);
+            String alternatives = alternativeXml("fr", fr) + alternativeXml("en", en) + alternativeXml("x-default", fr);
+            for (String url : List.of(fr, en)) {
+                xml.append("  <url><loc>").append(texte(url)).append("</loc>").append(alternatives).append("</url>\n");
+            }
         }
         for (String palier : TierCombosSeoService.PALIERS) {
             for (String type : TierCombosSeoService.TYPES) {
@@ -384,6 +404,14 @@ public class SeoController {
                     + UriUtils.encodePathSegment(equipe.id(), StandardCharsets.UTF_8))).append("</loc>")
                     .append("<priority>0.8</priority></url>\n");
         }
+        return plan(xml.append("</urlset>\n"));
+    }
+
+    @GetMapping(value = "/sitemap-players.xml", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> sitemapPlayers(HttpServletRequest request) {
+        String origine = origine(request);
+        StringBuilder xml = new StringBuilder(ENTETE_XML)
+                .append("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
         for (PlayerSeoService.IndexedProfile profil : seo.indexableProfiles(PROFILS_MAX)) {
             String chemin = "/players/" + UriUtils.encodePathSegment(
                     profil.riotId().replaceFirst("#([^#]*)$", "-$1"), StandardCharsets.UTF_8);
@@ -391,11 +419,18 @@ public class SeoController {
                     .append(profil.featured() ? "<priority>0.8</priority>" : "")
                     .append("</url>\n");
         }
-        xml.append("</urlset>\n");
+        return plan(xml.append("</urlset>\n"));
+    }
+
+    private static ResponseEntity<String> plan(StringBuilder xml) {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(Duration.ofHours(6)).cachePublic())
                 .contentType(MediaType.APPLICATION_XML)
                 .body(xml.toString());
+    }
+
+    private static String alternativeXml(String langue, String url) {
+        return "<xhtml:link rel=\"alternate\" hreflang=\"" + langue + "\" href=\"" + texte(url) + "\"/>";
     }
 
     // L'origine vient de la liste des fronts, jamais de l'en-tête Host. Hôte inconnu : URL relatives.

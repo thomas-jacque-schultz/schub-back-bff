@@ -109,22 +109,49 @@ class SeoControllerTest {
     }
 
     @Test
-    @DisplayName("le plan du site liste les pages publiques dans les deux langues, et chaque profil une fois")
+    @DisplayName("le plan du site est un index : les pages de contenu d'un côté, les profils de l'autre")
     void planDuSite() throws Exception {
+        String xml = mvc.perform(get("/seo/sitemap.xml").header("X-Forwarded-Host", "premadelab.eu"))
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(xml).contains("<sitemapindex")
+                .contains("<sitemap><loc>https://premadelab.eu/sitemap-pages.xml</loc></sitemap>")
+                .contains("<sitemap><loc>https://premadelab.eu/sitemap-players.xml</loc></sitemap>")
+                .doesNotContain("/players/");
+    }
+
+    @Test
+    @DisplayName("les pages publiques sont listées dans les deux langues, chacune annonçant l'autre")
+    void planDesPages() throws Exception {
+        String xml = mvc.perform(get("/seo/sitemap-pages.xml").header("X-Forwarded-Host", "premadelab.eu"))
+                .andReturn().getResponse().getContentAsString();
+
+        String alternatives = "<xhtml:link rel=\"alternate\" hreflang=\"fr\" href=\"https://premadelab.eu/ruler\"/>"
+                + "<xhtml:link rel=\"alternate\" hreflang=\"en\" href=\"https://premadelab.eu/en/ruler\"/>"
+                + "<xhtml:link rel=\"alternate\" hreflang=\"x-default\" href=\"https://premadelab.eu/ruler\"/>";
+        assertThat(xml).contains("xmlns:xhtml=\"http://www.w3.org/1999/xhtml\"")
+                .contains("<url><loc>https://premadelab.eu/ruler</loc>" + alternatives + "</url>")
+                .contains("<url><loc>https://premadelab.eu/en/ruler</loc>" + alternatives + "</url>")
+                .contains("<loc>https://premadelab.eu/en/presentation</loc>")
+                .contains("<loc>https://premadelab.eu/privacy</loc>")
+                .contains("<loc>https://premadelab.eu/en</loc>")
+                .doesNotContain("/players/");
+    }
+
+    @Test
+    @DisplayName("les profils ont leur fichier, chacun une fois, en français")
+    void planDesProfils() throws Exception {
         when(seo.indexableProfiles(org.mockito.ArgumentMatchers.anyInt())).thenReturn(List.of(
                 new PlayerSeoService.IndexedProfile("Le Nom#EUW", false),
                 new PlayerSeoService.IndexedProfile("Apex#EUW", true)));
 
-        String xml = mvc.perform(get("/seo/sitemap.xml").header("X-Forwarded-Host", "premadelab.eu"))
+        String xml = mvc.perform(get("/seo/sitemap-players.xml").header("X-Forwarded-Host", "premadelab.eu"))
                 .andReturn().getResponse().getContentAsString();
 
-        assertThat(xml).contains("<loc>https://premadelab.eu/en/presentation</loc>")
-                .contains("<loc>https://premadelab.eu/privacy</loc>")
-                .contains("<loc>https://premadelab.eu/ruler</loc>")
-                .contains("<loc>https://premadelab.eu/en/ruler</loc>")
-                .contains("<loc>https://premadelab.eu/players/Le%20Nom-EUW</loc></url>")
+        assertThat(xml).contains("<loc>https://premadelab.eu/players/Le%20Nom-EUW</loc></url>")
                 .contains("<loc>https://premadelab.eu/players/Apex-EUW</loc><priority>0.8</priority>")
-                .doesNotContain("/en/players/");
+                .doesNotContain("/en/players/")
+                .doesNotContain("/presentation");
     }
 
     @Test
