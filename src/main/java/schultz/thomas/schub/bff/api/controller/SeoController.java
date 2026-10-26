@@ -37,7 +37,8 @@ public class SeoController {
 
     private static final MediaType HTML = new MediaType("text", "html", StandardCharsets.UTF_8);
     private static final Set<String> SANS_DIVISION = Set.of("MASTER", "GRANDMASTER", "CHALLENGER");
-    private static final List<String> PAGES = List.of("/", "/presentation", "/contact", "/terms", "/privacy");
+    private static final List<String> PAGES = List.of("/", "/presentation", "/ruler", "/contact", "/terms",
+            "/privacy");
     // Une URL par profil, en français : la version anglaise est annoncée par le hreflang de la page.
     private static final int PROFILS_MAX = 49_000;
     private static final String OR = "#C9A227";
