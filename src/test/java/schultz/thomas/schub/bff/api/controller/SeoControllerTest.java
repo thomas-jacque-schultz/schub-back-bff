@@ -120,6 +120,8 @@ class SeoControllerTest {
 
         assertThat(xml).contains("<loc>https://premadelab.eu/en/presentation</loc>")
                 .contains("<loc>https://premadelab.eu/privacy</loc>")
+                .contains("<loc>https://premadelab.eu/ruler</loc>")
+                .contains("<loc>https://premadelab.eu/en/ruler</loc>")
                 .contains("<loc>https://premadelab.eu/players/Le%20Nom-EUW</loc></url>")
                 .contains("<loc>https://premadelab.eu/players/Apex-EUW</loc><priority>0.8</priority>")
                 .doesNotContain("/en/players/");
