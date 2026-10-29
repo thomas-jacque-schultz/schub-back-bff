@@ -329,6 +329,22 @@ public interface CoreFeignClient {
     void deleteComposition(@PathVariable("teamId") String teamId,
                            @PathVariable("compositionId") String compositionId);
 
+    @GetMapping("/teams/{teamId}/macro-plans")
+    byte[] getMacroPlans(@PathVariable("teamId") String teamId);
+
+    @GetMapping("/teams/{teamId}/macro-plans/{planId}")
+    byte[] getMacroPlan(@PathVariable("teamId") String teamId, @PathVariable("planId") String planId);
+
+    @PostMapping("/teams/{teamId}/macro-plans")
+    byte[] createMacroPlan(@PathVariable("teamId") String teamId, @RequestBody Object body);
+
+    @PutMapping("/teams/{teamId}/macro-plans/{planId}")
+    byte[] updateMacroPlan(@PathVariable("teamId") String teamId, @PathVariable("planId") String planId,
+                           @RequestBody Object body);
+
+    @DeleteMapping("/teams/{teamId}/macro-plans/{planId}")
+    void deleteMacroPlan(@PathVariable("teamId") String teamId, @PathVariable("planId") String planId);
+
     @GetMapping("/teams/{teamId}/champion-pool")
     byte[] getChampionPool(@PathVariable("teamId") String teamId,
                            @RequestParam(value = "masteryFloor", required = false) Integer masteryFloor);
