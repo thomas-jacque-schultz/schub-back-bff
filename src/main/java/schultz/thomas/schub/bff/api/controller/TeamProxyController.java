@@ -89,6 +89,12 @@ public class TeamProxyController {
         return gateway.call(UPSTREAM, () -> core.getTeamSessions(teamId, days));
     }
 
+    @GetMapping("/{teamId}/sessions/games")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> sessionGames(@PathVariable String teamId, @RequestParam String session) {
+        return gateway.call(UPSTREAM, () -> core.getTeamSessionGames(teamId, session));
+    }
+
     @PostMapping("/{teamId}/sessions/detect")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> detectSessions(@PathVariable String teamId, @RequestParam String day) {
