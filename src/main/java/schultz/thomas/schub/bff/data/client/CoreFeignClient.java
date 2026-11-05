@@ -262,6 +262,9 @@ public interface CoreFeignClient {
     byte[] getTeamSessions(@PathVariable("teamId") String teamId,
                            @RequestParam(value = "days", required = false) Integer days);
 
+    @GetMapping("/teams/{teamId}/sessions/games")
+    byte[] getTeamSessionGames(@PathVariable("teamId") String teamId, @RequestParam("session") String session);
+
     @PostMapping("/teams/{teamId}/sessions/detect")
     byte[] detectTeamSessions(@PathVariable("teamId") String teamId, @RequestParam("day") String day);
 
